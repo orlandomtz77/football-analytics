@@ -23,14 +23,19 @@ sys.path.insert(0, str(RAIZ / "src"))
 for _modulo in [m for m in sys.modules if m == "football_analytics" or m.startswith("football_analytics.")]:
     del sys.modules[_modulo]
 
-from football_analytics.charts import grafico_evolucion_puntos  # noqa: E402
+from football_analytics.charts import grafico_evolucion_puntos, grafico_historial_puntos  # noqa: E402
 from football_analytics.cleaning import ordenar_torneos  # noqa: E402
 from football_analytics.formato import cantidad  # noqa: E402
 from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
-from football_analytics.insights import datos_destacados  # noqa: E402
+from football_analytics.insights import datos_destacados, datos_historial  # noqa: E402
 from football_analytics.metrics import calcular_evolucion_puntos  # noqa: E402
 from football_analytics.reglamento import zonas_del_torneo  # noqa: E402
-from football_analytics.vistas import calendario_equipo, ficha_equipo, tabla_aficionado  # noqa: E402
+from football_analytics.vistas import (  # noqa: E402
+    calendario_equipo,
+    ficha_equipo,
+    historial_equipo,
+    tabla_aficionado,
+)
 
 # La ruta se puede cambiar con la variable de entorno LIGA_MX_DATOS.
 RUTA_DATOS = Path(os.environ.get("LIGA_MX_DATOS", RAIZ / "data" / "processed" / "liga_mx_partidos.csv"))
@@ -206,6 +211,25 @@ with st.expander("Ver gráfica de puntos acumulados"):
     )
     # theme=None conserva los colores validados del gráfico.
     st.plotly_chart(fig, theme=None, width="stretch")
+
+# --- Historial del equipo ---
+st.subheader(f"📚 Historial de {equipo}")
+historial = historial_equipo(partidos, equipo)
+for frase in datos_historial(historial, equipo):
+    st.markdown(f"- {frase}")
+st.caption(
+    "Mejor/peor torneo y promedios usan el % de puntos obtenidos y solo torneos terminados. "
+    "El nombre del equipo es el de la fuente: si un club cambió de nombre o de sede, aparece por separado."
+)
+st.plotly_chart(grafico_historial_puntos(historial, equipo), theme=None, width="stretch")
+st.caption("Barras grises: torneo en curso o cancelado.")
+
+with st.expander("Ver tabla del historial"):
+    tabla_historial = historial.assign(
+        Torneo=historial["Torneo"] + historial["Completo"].map({True: "", False: " (incompleto)"}),
+        Pos=historial["Pos"].astype(str) + ".º de " + historial["Equipos"].astype(str),
+    ).drop(columns=["Equipos", "Completo"])
+    st.dataframe(tabla_historial, hide_index=True, width="stretch")
 
 # --- Partidos del torneo ---
 with st.expander(f"Todos los partidos de {torneo} ({len(del_torneo)})"):

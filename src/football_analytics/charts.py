@@ -171,3 +171,41 @@ def grafico_evolucion_puntos(
             xanchor="left", yanchor="top", font={"size": 11, "color": COLOR_TEXTO_SECUNDARIO},
         )
     return fig
+
+
+def grafico_historial_puntos(historial: pd.DataFrame, equipo: str) -> go.Figure:
+    """Barras de puntos por torneo, del más antiguo al más reciente.
+
+    Responde: ¿en qué torneos le fue mejor a mi equipo?
+    Los torneos incompletos (en curso o cancelados) van en gris para no compararlos como si estuvieran terminados.
+    """
+    datos = historial.iloc[::-1]  # cronológico: el más antiguo a la izquierda
+    colores = [COLOR_LOCAL if completo else COLOR_CONECTOR for completo in datos["Completo"]]
+    fig = go.Figure(go.Bar(
+        x=datos["Torneo"],
+        y=datos["PTS"],
+        marker={"color": colores, "cornerradius": 4},
+        text=datos["PTS"],
+        textposition="outside",
+        textfont={"color": COLOR_TEXTO, "size": 11},
+        customdata=datos[["Pos", "Equipos", "Récord", "Fase final"]].to_numpy(),
+        hovertemplate=(
+            "<b>%{x}</b><br>%{y} puntos · %{customdata[0]}.º de %{customdata[1]}<br>"
+            "%{customdata[2]} · Fase final: %{customdata[3]}<extra></extra>"
+        ),
+    ))
+    fig.update_layout(
+        title={"text": f"Puntos de {equipo} por torneo (fase regular)",
+               "font": {"color": COLOR_TEXTO, "size": 16}, "x": 0, "xanchor": "left"},
+        xaxis={"tickangle": -45, "title": None},
+        yaxis={"title": "Puntos", "gridcolor": COLOR_REJILLA, "rangemode": "tozero"},
+        font={"color": COLOR_TEXTO_SECUNDARIO},
+        plot_bgcolor="#fcfcfb",
+        paper_bgcolor="#fcfcfb",
+        height=420,
+        bargap=0.25,
+        margin={"l": 60, "r": 20, "t": 60, "b": 110},
+        hoverlabel={"bgcolor": "#fcfcfb", "font": {"color": COLOR_TEXTO}},
+        showlegend=False,
+    )
+    return fig

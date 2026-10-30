@@ -153,3 +153,73 @@ def test_calendario_equipo():
         {"Fecha": "15/07/2025", "Rival": "Equipo C", "Dónde": "✈️ Visita", "Marcador": "3-0",
          "Resultado": "✅ Ganó", "Puntos acumulados": 6},
     ]
+
+
+# --- Historial ---
+
+def _dataset_dos_torneos():
+    """Apertura 2024 (completo, A gana todo, A y B juegan la final) y Clausura 2025 (incompleto)."""
+    filas = [
+        # torneo, fase, completo, local, visitante, gl, gv
+        ("Apertura 2024", "regular", True, "Equipo A", "Equipo B", 2, 0),
+        ("Apertura 2024", "regular", True, "Equipo B", "Equipo C", 1, 1),
+        ("Apertura 2024", "regular", True, "Equipo C", "Equipo A", 0, 3),
+        ("Apertura 2024", "final", True, "Equipo B", "Equipo A", 1, 0),
+        ("Clausura 2025", "regular", False, "Equipo B", "Equipo A", 2, 1),
+    ]
+    df = pd.DataFrame(filas, columns=["torneo", "fase", "regular_completa", "equipo_local",
+                                      "equipo_visitante", "goles_local", "goles_visitante"])
+    df["fecha"] = pd.date_range("2024-07-01", periods=len(df), freq="7D")
+    return df
+
+
+def test_historial_equipo():
+    from football_analytics.vistas import historial_equipo
+
+    hist = historial_equipo(_dataset_dos_torneos(), "Equipo A")
+    assert hist["Torneo"].tolist() == ["Clausura 2025", "Apertura 2024"]  # más reciente primero
+    apertura = hist.set_index("Torneo").loc["Apertura 2024"]
+    assert (apertura["Pos"], apertura["PTS"], apertura["Récord"], apertura["% puntos"]) == (1, 6, "2G-0E-0P", 100)
+    assert apertura["Fase final"] == "✅ Sí" and bool(apertura["Completo"])
+    clausura = hist.set_index("Torneo").loc["Clausura 2025"]
+    assert (clausura["PTS"], clausura["Fase final"], bool(clausura["Completo"])) == (0, "—", False)
+
+
+def test_historial_equipo_que_no_jugo():
+    from football_analytics.vistas import historial_equipo
+
+    hist = historial_equipo(_dataset_dos_torneos(), "Equipo C")
+    assert hist["Torneo"].tolist() == ["Apertura 2024"]  # C no jugó el Clausura 2025
+
+
+def test_datos_historial_ignora_torneos_incompletos():
+    from football_analytics.insights import datos_historial
+    from football_analytics.vistas import historial_equipo
+
+    frases = "\n".join(datos_historial(historial_equipo(_dataset_dos_torneos(), "Equipo A"), "Equipo A"))
+    assert "**Torneos en los datos:** 2 (desde Apertura 2024)." in frases
+    # El Clausura 2025 (0 pts, incompleto) no cuenta como peor torneo.
+    assert "**Peor torneo:** Apertura 2024 (6 pts, 1.º lugar)." in frases
+    assert "**Jugó la fase final:** 1 de 1 torneo terminado." in frases
+    assert "Apertura vs. Clausura" not in frases  # no hay Clausura completo para comparar
+
+
+def test_grafico_historial_grises_para_incompletos():
+    from football_analytics.charts import COLOR_CONECTOR, COLOR_LOCAL, grafico_historial_puntos
+    from football_analytics.vistas import historial_equipo
+
+    fig = grafico_historial_puntos(historial_equipo(_dataset_dos_torneos(), "Equipo A"), "Equipo A")
+    assert list(fig.data[0].x) == ["Apertura 2024", "Clausura 2025"]  # cronológico
+    assert list(fig.data[0].marker.color) == [COLOR_LOCAL, COLOR_CONECTOR]
+
+
+def test_datos_historial_compara_apertura_y_clausura():
+    from football_analytics.insights import datos_historial
+    from football_analytics.vistas import historial_equipo
+
+    datos = _dataset_dos_torneos()
+    datos.loc[datos["torneo"] == "Clausura 2025", "regular_completa"] = True
+    frases = "\n".join(datos_historial(historial_equipo(datos, "Equipo A"), "Equipo A"))
+    assert ("**Apertura vs. Clausura:** Equipo A rinde mejor en Apertura "
+            "(obtiene en promedio el 100 % de los puntos posibles en Apertura y el 0 % en Clausura).") in frases
+    assert "**Peor torneo:** Clausura 2025 (0 pts, 2.º lugar)." in frases

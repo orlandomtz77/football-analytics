@@ -57,3 +57,45 @@ def datos_destacados(partidos: pd.DataFrame) -> list[str]:
         f"{cantidad(tabla['GC'].min(), 'gol', 'goles')} en contra."
     )
     return [f for f in frases if f]
+
+
+def datos_historial(historial: pd.DataFrame, equipo: str) -> list[str]:
+    """Frases sobre el historial de un equipo (salida de `vistas.historial_equipo`).
+
+    Mejor/peor torneo y promedios usan solo torneos completos (sin el actual ni Clausura 2020).
+    """
+    if historial.empty:
+        return []
+    completos = historial[historial["Completo"]].set_index("Torneo")
+    frases = [f"📅 **Torneos en los datos:** {len(historial)} (desde {historial['Torneo'].iloc[-1]})."]
+    if completos.empty:
+        return frases
+
+    mejores = _mejores(completos["% puntos"])
+    peores = _mejores(completos["% puntos"], mayor=False)
+
+    def detalle(torneos: list[str]) -> str:
+        return unir_nombres([
+            f"{t} ({completos.at[t, 'PTS']} pts, {completos.at[t, 'Pos']}.º lugar)" for t in torneos
+        ])
+
+    frases.append(f"⭐ **Mejor torneo:** {detalle(mejores)}.")
+    frases.append(f"📉 **Peor torneo:** {detalle(peores)}.")
+
+    # Solo torneos terminados: en el actual y en Clausura 2020 nadie pudo jugar la fase final.
+    con_fase_final = (completos["Fase final"] == "✅ Sí").sum()
+    frases.append(f"🏟️ **Jugó la fase final:** {con_fase_final} de {cantidad(len(completos), 'torneo terminado', 'torneos terminados')}.")
+
+    tipo = completos.index.str.split().str[0]
+    promedio = completos.groupby(tipo)["% puntos"].mean().round()
+    if {"Apertura", "Clausura"} <= set(promedio.index):
+        a, c = int(promedio["Apertura"]), int(promedio["Clausura"])
+        if a == c:
+            comparacion = "rinde igual en ambos"
+        else:
+            comparacion = f"rinde mejor en {'Apertura' if a > c else 'Clausura'}"
+        frases.append(
+            f"🔁 **Apertura vs. Clausura:** {equipo} {comparacion} "
+            f"(obtiene en promedio el {a} % de los puntos posibles en Apertura y el {c} % en Clausura)."
+        )
+    return frases

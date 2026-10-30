@@ -74,3 +74,14 @@ def test_dashboard_ficha_de_equipo(datos_procesados):
     assert indicadores["Récord"] == "0G-1E-1P"
     textos = " ".join(m.value for m in at.markdown)
     assert "**Últimos 5:** ❌ ➖" in textos
+
+
+def test_dashboard_historial(datos_procesados):
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    at.selectbox[0].set_value("Apertura 2025").run()
+    at.selectbox[1].set_value("Equipo A").run()
+    assert not at.exception
+    assert any("Historial de Equipo A" in h.value for h in at.subheader)
+    textos = " ".join(m.value for m in at.markdown)
+    # Datos de prueba: A jugó Apertura 2025 (6 pts) y Clausura 2026 (1 partido, 3 pts).
+    assert "**Torneos en los datos:** 2 (desde Apertura 2025)." in textos

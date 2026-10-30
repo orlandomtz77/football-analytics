@@ -23,6 +23,7 @@
 - [x] Dashboard publicado en Streamlit Community Cloud: https://ligamx-analytics.streamlit.app/ (verificado 2026-10-30: descarga automática OK, 29 torneos, mismos valores que en local; accesible sin iniciar sesión)
 - [x] Evolución por equipo: `calcular_evolucion_puntos` y `racha_mas_larga` en `metrics.py`, `grafico_evolucion_puntos` en `charts.py`, sección en el dashboard (selector de equipo, puntos, últimos 5, mejores rachas, gráfico vs. líder) — implementado y probado; puntos finales cuadran con la tabla en los 29 torneos; revisado visualmente (local, aún no desplegado)
 - [x] Rediseño para aficionados (2026-10-30): datos del torneo en frases (`insights.py`), tabla con pestañas General/Local/Visitante, columnas JJ/JG/JE/JP/DIF/PTS, últimos 5 con ✅➖❌ y zonas de clasificación por torneo (`reglamento.py`, verificado en Wikipedia), ficha de equipo con posición, distancia al líder, récords y calendario (`vistas.py`). Gráfico de pesas retirado de la interfaz; gráfica de puntos acumulados movida a un desplegable — implementado, probado (51 pruebas, 29 torneos sin errores) y revisado en escritorio y celular
+- [x] Historial del equipo (2026-10-30): `historial_equipo` en `vistas.py`, `datos_historial` en `insights.py` (mejor/peor torneo, fase final, Apertura vs. Clausura con % de puntos y solo torneos terminados), `grafico_historial_puntos` en `charts.py` — implementado, probado (57 pruebas) y revisado en escritorio y celular
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -53,6 +54,10 @@
 - Motivo: las gráficas técnicas (PPP, pesas) eran difíciles de leer para alguien de deportes.
 - Decisión: zonas de clasificación solo por posición; no se modelan excepciones (tabla de cociente).
 - Motivo: el reglamento cambia por torneo y las excepciones requieren datos que la fuente no trae.
+- Decisión: el historial compara torneos con el % de puntos y excluye torneos incompletos.
+- Motivo: Apertura 2019 tuvo 18 partidos; el torneo en curso y Clausura 2020 no son comparables.
+- Decisión: "jugó la fase final" sale de los partidos de liguilla en los datos; no se indica campeón.
+- Motivo: no está verificado cómo registra la fuente los partidos definidos en penales.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -65,8 +70,8 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 51 passed (2026-10-30)
+- Resultado: 57 passed (2026-10-30)
 - Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales; revisar el gráfico con tema oscuro de Streamlit (fondo fijo claro)
 
 ## Próximo paso
-- Comparar torneos de un mismo equipo (¿América rinde mejor en Apertura o en Clausura?) con los 14 años de datos.
+- Unificar franquicias reubicadas (p. ej. Monarcas → Mazatlan FC) en el historial, documentando la decisión.

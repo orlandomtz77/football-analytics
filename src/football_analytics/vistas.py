@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from football_analytics.cleaning import ordenar_torneos
 from football_analytics.formato import ICONO_RESULTADO, forma_con_iconos, record
 from football_analytics.metrics import (
     calcular_evolucion_puntos,
@@ -80,3 +81,36 @@ def calendario_equipo(partidos: pd.DataFrame, equipo: str) -> pd.DataFrame:
         "Resultado": del_equipo["resultado"].map(lambda r: f"{ICONO_RESULTADO[r]} {TEXTO_RESULTADO[r]}"),
         "Puntos acumulados": del_equipo["Pts_acumulados"],
     }).reset_index(drop=True)
+
+
+def historial_equipo(partidos: pd.DataFrame, equipo: str) -> pd.DataFrame:
+    """Una fila por torneo en que jugó `equipo`: posición, puntos, récord y si jugó la fase final.
+
+    `partidos` debe ser el dataset procesado completo (todas las fases y torneos).
+    `Fase final` sale de los partidos de fase final presentes en los datos, no de la posición.
+    `% puntos` = PTS / (JJ * 3); sirve para comparar torneos con distinto número de partidos.
+    """
+    filas = []
+    for torneo in ordenar_torneos(partidos["torneo"]):
+        del_torneo = partidos[partidos["torneo"] == torneo]
+        regular = del_torneo[del_torneo["fase"] == "regular"]
+        tabla = calcular_tabla_posiciones(regular).set_index("equipo")
+        if equipo not in tabla.index:
+            continue
+        final = del_torneo[del_torneo["fase"] == "final"]
+        jugo_final = bool(((final["equipo_local"] == equipo) | (final["equipo_visitante"] == equipo)).any())
+        fila = tabla.loc[equipo]
+        filas.append({
+            "Torneo": torneo,
+            "Pos": int(tabla.index.get_loc(equipo)) + 1,
+            "Equipos": len(tabla),
+            "PTS": int(fila["Pts"]),
+            "JJ": int(fila["PJ"]),
+            "Récord": record(fila["PG"], fila["PE"], fila["PP"]),
+            "DIF": int(fila["DG"]),
+            "% puntos": round(100 * fila["Pts"] / (fila["PJ"] * 3)),
+            "Fase final": "✅ Sí" if jugo_final else "—",
+            "Completo": bool(del_torneo["regular_completa"].iloc[0]),
+        })
+    return pd.DataFrame(filas, columns=["Torneo", "Pos", "Equipos", "PTS", "JJ", "Récord", "DIF",
+                                        "% puntos", "Fase final", "Completo"])
