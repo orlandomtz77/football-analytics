@@ -35,6 +35,7 @@ from football_analytics.correcciones import aplicar_correcciones, cargar_correcc
 from football_analytics.formato import cantidad  # noqa: E402
 from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
 from football_analytics.insights import (  # noqa: E402
+    COMO_SE_DEFINIO,
     datos_cara_a_cara,
     datos_destacados,
     datos_historial,
@@ -155,6 +156,12 @@ goles_por_partido = (regular["goles_local"] + regular["goles_visitante"]).mean()
 pct_local = (regular["resultado"] == "H").mean() * 100
 pct_empate = (regular["resultado"] == "D").mean() * 100
 
+if estado == "terminado" and campeon is not None:
+    mostrar_indicadores([
+        ("🏆 Campeón", campeon["campeon"], f"Ganó la final {COMO_SE_DEFINIO[campeon['definicion']]}."),
+        ("Subcampeón", campeon["subcampeon"], None),
+    ])
+
 mostrar_indicadores([
     ("Partidos jugados", len(regular), "Fase regular."),
     ("Goles por partido", f"{goles_por_partido:.1f}", None),
@@ -205,7 +212,7 @@ def mostrar_tabla(vista: pd.DataFrame) -> None:
 with pestana_tabla:
     pestana_general, pestana_local, pestana_visita = st.tabs(["General", "🏠 Local", "✈️ Visitante"])
     with pestana_general:
-        general = tabla_aficionado(regular, torneo)
+        general = tabla_aficionado(regular, torneo, campeones=campeones)
         mostrar_tabla(general)
         zonas = zonas_del_torneo(torneo)
         if zonas:

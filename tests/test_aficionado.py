@@ -375,3 +375,20 @@ def test_grafico_historial_pone_trofeo_en_titulos():
     hist = historial_equipo(_dataset_dos_torneos(), "Equipo B", campeones=CAMPEONES_PRUEBA)
     fig = grafico_historial_puntos(hist, "Equipo B")
     assert list(fig.data[0].text) == ["1<br>🏆", "3"]  # Apertura 2024 (campeón) y Clausura 2025
+
+
+def test_tabla_aficionado_marca_campeon_y_subcampeon():
+    from football_analytics.vistas import tabla_aficionado
+
+    campeones = pd.DataFrame(
+        {"campeon": ["Equipo C"], "subcampeon": ["Equipo A"], "definicion": ["penales"]},
+        index=pd.Index(["Apertura 2025"], name="torneo"),
+    )
+    vista = tabla_aficionado(PARTIDOS, "Apertura 2025", campeones=campeones)
+    assert list(vista.columns)[-1] == "Final"
+    assert vista.set_index("Equipo")["Final"].to_dict() == {
+        "Equipo A": "Subcampeón", "Equipo B": "", "Equipo C": "🏆 Campeón",
+    }
+    # Torneo sin campeón en la tabla (en curso) o tablas por condición: sin columna Final.
+    assert "Final" not in tabla_aficionado(PARTIDOS, "Apertura 2026", campeones=campeones).columns
+    assert "Final" not in tabla_aficionado(PARTIDOS, "Apertura 2025", condicion="local", campeones=campeones).columns

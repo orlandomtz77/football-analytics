@@ -31,6 +31,7 @@
 - [x] Resultados administrativos (2026-10-30): `data/reference/resultados_administrativos.csv` y `correcciones.py`; Clausura 2021 Atlas-América corregido a 3-0; la tabla coincide con Wikipedia — implementado y probado
 - [x] Hora de México (2026-10-30): la fuente usa hora del Reino Unido (verificado con 8 partidos de final y 2 de la noche del cambio de horario); `convertir_a_hora_mexico` en `cleaning.py` se aplica al cargar; la pestaña Partidos muestra fecha y hora del centro — implementado, probado y revisado con datos reales
 - [x] Partidos por semana de juego (2026-10-30): `semanas_de_juego`, `etiqueta_fechas` y `tabla_partidos` en `vistas.py`; la pestaña Partidos muestra la semana elegida (por defecto la más reciente) con día y hora, y todos los partidos en un desplegable — implementado, probado y revisado en celular (400 px)
+- [x] Campeón y subcampeón visibles (2026-10-30): indicadores "🏆 Campeón" y "Subcampeón" en el encabezado de los torneos terminados y columna `Final` en la tabla general (`tabla_aficionado(..., campeones=...)`) — implementado, probado y revisado en celular
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -93,7 +94,7 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 91 passed (2026-10-30)
+- Resultado: 92 passed (2026-10-30)
 - Pendientes: ninguno conocido
 
 ## Próximo paso

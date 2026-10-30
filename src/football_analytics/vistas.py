@@ -20,10 +20,14 @@ COLUMNAS_PRENSA = {"equipo": "Equipo", "PJ": "JJ", "PG": "JG", "PE": "JE", "PP":
 TEXTO_RESULTADO = {"G": "Ganó", "E": "Empató", "P": "Perdió"}
 
 
-def tabla_aficionado(partidos: pd.DataFrame, torneo: str, condicion: str | None = None) -> pd.DataFrame:
+def tabla_aficionado(
+    partidos: pd.DataFrame, torneo: str, condicion: str | None = None, campeones: pd.DataFrame | None = None
+) -> pd.DataFrame:
     """Tabla con Pos, columnas de prensa, últimos 5 con íconos y zona (solo en la tabla general).
 
     Con `condicion` ("local"/"visitante") la racha también se limita a esos partidos.
+    Con `campeones` (salida de `campeones.cargar_campeones`) y el torneo en ella, la tabla general agrega
+    la columna `Final` con "🏆 Campeón" y "Subcampeón".
     """
     tabla = calcular_tabla_posiciones(partidos, condicion=condicion)
     evolucion = calcular_evolucion_puntos(partidos)
@@ -36,6 +40,9 @@ def tabla_aficionado(partidos: pd.DataFrame, torneo: str, condicion: str | None 
     vista["Últimos 5"] = vista["Equipo"].map(lambda e: forma_con_iconos(ultimos.get(e, [])))
     if condicion is None:
         vista["Zona"] = asignar_zona(vista, torneo)
+        if campeones is not None and torneo in campeones.index:
+            final = {campeones.at[torneo, "campeon"]: "🏆 Campeón", campeones.at[torneo, "subcampeon"]: "Subcampeón"}
+            vista["Final"] = vista["Equipo"].map(final).fillna("")
     # PTS junto al equipo: en celular es lo primero que se ve sin deslizar la tabla.
     return vista[["Pos", "Equipo", "PTS"] + [c for c in vista.columns if c not in ("Pos", "Equipo", "PTS")]]
 
