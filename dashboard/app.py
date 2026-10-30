@@ -125,15 +125,16 @@ for frase in datos_destacados(regular):
 
 # --- Tabla ---
 st.subheader("🏆 Tabla general")
+# Semitransparentes: se ven bien sobre fondo claro y oscuro, y el texto conserva el color del tema.
 FONDO_ZONA = {
-    "Liguilla": "#e6f4ea", "Cuartos de final": "#e6f4ea",
-    "Reclasificación": "#fff4d6", "Play-in": "#fff4d6",
+    "Liguilla": "rgba(34, 160, 80, 0.18)", "Cuartos de final": "rgba(34, 160, 80, 0.18)",
+    "Reclasificación": "rgba(237, 161, 0, 0.22)", "Play-in": "rgba(237, 161, 0, 0.22)",
 }
 
 
 def resaltar_zona(fila: pd.Series) -> list[str]:
     fondo = FONDO_ZONA.get(fila.get("Zona", ""), "")
-    estilo = f"background-color: {fondo}; color: #0b0b0b" if fondo else ""
+    estilo = f"background-color: {fondo}" if fondo else ""
     return [estilo] * len(fila)
 
 
@@ -213,8 +214,8 @@ with st.expander("Ver gráfica de puntos acumulados"):
         titulo=f"Puntos acumulados: {equipo}" + (f" vs. {referencia}" if referencia else ""),
         nota="Cada punto es un partido del equipo, en orden de fecha (la fuente no indica la jornada oficial).",
     )
-    # theme=None conserva los colores validados del gráfico.
-    st.plotly_chart(fig, theme=None, width="stretch")
+    # El tema de Streamlit pone fondo y textos (claro u oscuro); las series conservan sus colores validados.
+    st.plotly_chart(fig, theme="streamlit", width="stretch")
 
 # --- Historial del equipo ---
 st.subheader(f"📚 Historial de {equipo}")
@@ -225,7 +226,7 @@ st.caption(
     "Mejor/peor torneo y promedios usan el % de puntos obtenidos y solo torneos terminados. "
     "El nombre del equipo es el de la fuente: si un club cambió de nombre o de sede, aparece por separado."
 )
-st.plotly_chart(grafico_historial_puntos(historial, equipo), theme=None, width="stretch")
+st.plotly_chart(grafico_historial_puntos(historial, equipo), theme="streamlit", width="stretch")
 st.caption("Barras grises: torneo en curso o cancelado.")
 
 with st.expander("Ver tabla del historial"):

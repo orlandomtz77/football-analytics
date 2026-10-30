@@ -1,17 +1,26 @@
-"""Gráficos con Plotly. Cada función recibe una tabla ya calculada en metrics.py."""
+"""Gráficos con Plotly. Cada función recibe una tabla ya calculada en metrics.py.
+
+Los gráficos solo fijan los colores de las series. El fondo, los textos y la rejilla los pone el tema
+de Streamlit (`st.plotly_chart(..., theme="streamlit")`), que cambia al instante entre claro y oscuro.
+"""
 
 from __future__ import annotations
 
 import pandas as pd
 import plotly.graph_objects as go
 
-# Paleta validada (CVD y contraste) en modo claro con la guía de visualización.
+# Paleta validada (CVD, banda de luminosidad y contraste) con la guía de visualización
+# contra los dos fondos de Streamlit: claro #ffffff y oscuro #0e1117.
 COLOR_LOCAL = "#2a78d6"
-COLOR_VISITANTE = "#eb6834"
-COLOR_CONECTOR = "#c3c2b7"
-COLOR_TEXTO = "#0b0b0b"
-COLOR_TEXTO_SECUNDARIO = "#52514e"
-COLOR_REJILLA = "#e6e5e0"
+COLOR_VISITANTE = "#d95926"
+COLOR_CONECTOR = "#8a8984"  # gris neutro: conectores y torneos incompletos (contraste 3.5:1 claro, 5.4:1 oscuro)
+
+
+def _nota_al_pie(fig: go.Figure, nota: str) -> None:
+    fig.add_annotation(
+        text=nota, showarrow=False, xref="paper", yref="paper", x=0, y=0, yshift=-60,
+        xanchor="left", yanchor="top", font={"size": 11},
+    )
 
 
 def grafico_local_visitante(rendimiento: pd.DataFrame, titulo: str, nota: str | None = None) -> go.Figure:
@@ -49,8 +58,7 @@ def grafico_local_visitante(rendimiento: pd.DataFrame, titulo: str, nota: str | 
             mode="markers",
             name=condicion.capitalize(),
             # Forma distinta además del color, para no depender solo del color.
-            marker={"color": color, "size": 11, "symbol": simbolo,
-                    "line": {"color": "#fcfcfb", "width": 2}},
+            marker={"color": color, "size": 11, "symbol": simbolo},
             customdata=datos[[f"PJ_{condicion}", f"Pts_{condicion}", f"GF_{condicion}",
                               f"GC_{condicion}", "dif_PPP"]].to_numpy(),
             hovertemplate=(
@@ -64,28 +72,15 @@ def grafico_local_visitante(rendimiento: pd.DataFrame, titulo: str, nota: str | 
         ))
 
     fig.update_layout(
-        title={"text": titulo, "font": {"color": COLOR_TEXTO, "size": 16}, "x": 0, "xanchor": "left"},
-        xaxis={
-            "title": "Puntos por partido (PPP)",
-            "range": [-0.1, 3.1],
-            "dtick": 0.5,
-            "gridcolor": COLOR_REJILLA,
-            "zeroline": False,
-        },
-        yaxis={"title": None, "gridcolor": COLOR_REJILLA, "automargin": True},
+        title={"text": titulo, "font": {"size": 16}, "x": 0, "xanchor": "left"},
+        xaxis={"title": "Puntos por partido (PPP)", "range": [-0.1, 3.1], "dtick": 0.5, "zeroline": False},
+        yaxis={"title": None, "automargin": True},
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.0, "xanchor": "left", "x": 0},
-        font={"color": COLOR_TEXTO_SECUNDARIO},
-        plot_bgcolor="#fcfcfb",
-        paper_bgcolor="#fcfcfb",
         height=max(400, 28 * len(equipos) + 140),
         margin={"l": 7 * max((len(e) for e in equipos), default=0) + 20, "r": 20, "t": 90, "b": 90 if nota else 50},
-        hoverlabel={"bgcolor": "#fcfcfb", "font": {"color": COLOR_TEXTO}},
     )
     if nota:
-        fig.add_annotation(
-            text=nota, showarrow=False, xref="paper", yref="paper", x=0, y=0, yshift=-60,
-            xanchor="left", yanchor="top", font={"size": 11, "color": COLOR_TEXTO_SECUNDARIO},
-        )
+        _nota_al_pie(fig, nota)
     return fig
 
 
@@ -120,7 +115,7 @@ def grafico_evolucion_puntos(
             mode="lines+markers",
             name=nombre,
             line={"color": color, "width": 2},
-            marker={"color": color, "size": 8, "line": {"color": "#fcfcfb", "width": 2}},
+            marker={"color": color, "size": 8},
             customdata=list(zip(
                 datos["fecha"].dt.strftime("%d/%m/%Y"),
                 datos["rival"],
@@ -141,35 +136,27 @@ def grafico_evolucion_puntos(
         fig.add_annotation(
             x=ultimo["partido_n"], y=ultimo["Pts_acumulados"],
             text=f"{nombre}: {ultimo['Pts_acumulados']}", showarrow=False,
-            xanchor="left", xshift=8, font={"size": 12, "color": COLOR_TEXTO},
+            xanchor="left", xshift=8, font={"size": 12},
         )
 
     max_partidos = int(evolucion["partido_n"].max()) if not evolucion.empty else 1
     fig.update_layout(
-        title={"text": titulo, "font": {"color": COLOR_TEXTO, "size": 16}, "x": 0, "xanchor": "left"},
+        title={"text": titulo, "font": {"size": 16}, "x": 0, "xanchor": "left"},
         xaxis={
             "title": "Partido n.º del equipo (orden por fecha)",
             "range": [0.5, max_partidos + 0.5],
             "dtick": 1,
-            "gridcolor": COLOR_REJILLA,
             "zeroline": False,
         },
-        yaxis={"title": "Puntos acumulados", "gridcolor": COLOR_REJILLA, "rangemode": "tozero"},
+        yaxis={"title": "Puntos acumulados", "rangemode": "tozero"},
         showlegend=len(series) > 1,
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.0, "xanchor": "left", "x": 0},
-        font={"color": COLOR_TEXTO_SECUNDARIO},
-        plot_bgcolor="#fcfcfb",
-        paper_bgcolor="#fcfcfb",
         height=420,
         # Margen derecho amplio para las etiquetas directas.
         margin={"l": 70, "r": 170, "t": 80, "b": 90 if nota else 50},
-        hoverlabel={"bgcolor": "#fcfcfb", "font": {"color": COLOR_TEXTO}},
     )
     if nota:
-        fig.add_annotation(
-            text=nota, showarrow=False, xref="paper", yref="paper", x=0, y=0, yshift=-60,
-            xanchor="left", yanchor="top", font={"size": 11, "color": COLOR_TEXTO_SECUNDARIO},
-        )
+        _nota_al_pie(fig, nota)
     return fig
 
 
@@ -187,7 +174,7 @@ def grafico_historial_puntos(historial: pd.DataFrame, equipo: str) -> go.Figure:
         marker={"color": colores, "cornerradius": 4},
         text=datos["PTS"],
         textposition="outside",
-        textfont={"color": COLOR_TEXTO, "size": 11},
+        textfont={"size": 11},
         customdata=datos[["Pos", "Equipos", "Récord", "Fase final"]].to_numpy(),
         hovertemplate=(
             "<b>%{x}</b><br>%{y} puntos · %{customdata[0]}.º de %{customdata[1]}<br>"
@@ -195,17 +182,12 @@ def grafico_historial_puntos(historial: pd.DataFrame, equipo: str) -> go.Figure:
         ),
     ))
     fig.update_layout(
-        title={"text": f"Puntos de {equipo} por torneo (fase regular)",
-               "font": {"color": COLOR_TEXTO, "size": 16}, "x": 0, "xanchor": "left"},
+        title={"text": f"Puntos de {equipo} por torneo (fase regular)", "font": {"size": 16}, "x": 0, "xanchor": "left"},
         xaxis={"tickangle": -45, "title": None},
-        yaxis={"title": "Puntos", "gridcolor": COLOR_REJILLA, "rangemode": "tozero"},
-        font={"color": COLOR_TEXTO_SECUNDARIO},
-        plot_bgcolor="#fcfcfb",
-        paper_bgcolor="#fcfcfb",
+        yaxis={"title": "Puntos", "rangemode": "tozero"},
         height=420,
         bargap=0.25,
         margin={"l": 60, "r": 20, "t": 60, "b": 110},
-        hoverlabel={"bgcolor": "#fcfcfb", "font": {"color": COLOR_TEXTO}},
         showlegend=False,
     )
     return fig

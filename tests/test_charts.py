@@ -68,3 +68,27 @@ def test_evolucion_sin_referencia_o_misma_referencia_una_serie():
     fig = grafico_evolucion_puntos(EVOLUCION_PRUEBA, "Equipo A", referencia="Equipo A")
     assert len(fig.data) == 1
     assert fig.layout.showlegend is False
+
+
+
+def test_graficos_no_fijan_fondo_ni_texto_para_respetar_el_tema():
+    """El tema de Streamlit (claro u oscuro) debe poder poner fondo y textos."""
+    import pandas as pd
+
+    from football_analytics.charts import grafico_evolucion_puntos, grafico_historial_puntos
+
+    historial = pd.DataFrame({
+        "Torneo": ["Apertura 2026", "Clausura 2026"], "PTS": [10, 30], "Pos": [5, 1], "Equipos": [18, 18],
+        "Récord": ["3G-1E-1P", "9G-3E-5P"], "Fase final": ["—", "✅ Sí"], "Completo": [False, True],
+    })
+    figuras = [
+        grafico_local_visitante(RENDIMIENTO_PRUEBA, "Prueba", nota="Fuente"),
+        grafico_evolucion_puntos(EVOLUCION_PRUEBA, "Equipo B", referencia="Equipo A", titulo="T", nota="N"),
+        grafico_historial_puntos(historial, "Equipo A"),
+    ]
+    for fig in figuras:
+        assert fig.layout.paper_bgcolor is None
+        assert fig.layout.plot_bgcolor is None
+        assert fig.layout.font.color is None
+        assert fig.layout.title.font.color is None
+        assert all(a.font.color is None for a in fig.layout.annotations)

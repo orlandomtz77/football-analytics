@@ -25,6 +25,7 @@
 - [x] Rediseño para aficionados (2026-10-30): datos del torneo en frases (`insights.py`), tabla con pestañas General/Local/Visitante, columnas JJ/JG/JE/JP/DIF/PTS, últimos 5 con ✅➖❌ y zonas de clasificación por torneo (`reglamento.py`, verificado en Wikipedia), ficha de equipo con posición, distancia al líder, récords y calendario (`vistas.py`). Gráfico de pesas retirado de la interfaz; gráfica de puntos acumulados movida a un desplegable — implementado, probado (51 pruebas, 29 torneos sin errores) y revisado en escritorio y celular
 - [x] Historial del equipo (2026-10-30): `historial_equipo` en `vistas.py`, `datos_historial` en `insights.py` (mejor/peor torneo, fase final, Apertura vs. Clausura con % de puntos y solo torneos terminados), `grafico_historial_puntos` en `charts.py` — implementado, probado (57 pruebas) y revisado en escritorio y celular
 - [x] Cara a cara (2026-10-30): `enfrentamientos`, `resumen_enfrentamientos` y `CLASICOS` en `vistas.py`, `datos_cara_a_cara` en `insights.py`; sección en el dashboard con los 4 clásicos o dos equipos a elegir — implementado, probado (62 pruebas, simetría A/B verificada en los 4 clásicos) y revisado visualmente
+- [x] Tema oscuro (2026-10-30): las gráficas usan `theme="streamlit"` y solo fijan los colores de las series (azul `#2a78d6`, naranja `#d95926`, gris `#8a8984`, validados contra los fondos claro `#ffffff` y oscuro `#0e1117`); las zonas de la tabla usan fondos semitransparentes sin color de texto fijo — implementado, probado (63 pruebas) y revisado visualmente en ambos temas, incluido el cambio de tema desde el menú sin recargar
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -63,6 +64,8 @@
 - Motivo: decisión del usuario (2026-10-30); se respetan los nombres de la fuente y el historial de cada club por separado.
 - Decisión: el cara a cara incluye fase regular y liguilla, contando cada partido por su marcador.
 - Motivo: así se cuentan los clásicos; las series de liguilla definidas por global o penales no se modelan (la fuente no lo indica).
+- Decisión: el fondo, los textos y la rejilla de las gráficas los pone el tema de Streamlit (`theme="streamlit"`), no el código.
+- Motivo: al cambiar de tema en el menú, Streamlit no vuelve a ejecutar la app; si el código elige los colores (p. ej. con `st.context.theme`), las gráficas quedan con el tema anterior hasta la siguiente interacción (comprobado). El tema de Streamlit se aplica en el navegador y cambia al instante.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -75,8 +78,8 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 62 passed (2026-10-30)
-- Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales; revisar el gráfico con tema oscuro de Streamlit (fondo fijo claro)
+- Resultado: 63 passed (2026-10-30)
+- Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales
 
 ## Próximo paso
-- Revisar el dashboard con el tema oscuro de Streamlit (gráficos con fondo claro fijo).
+- Verificar cómo registra la fuente las series de liguilla definidas en tiempo extra o penales (comparando algunas finales conocidas con Wikipedia), como base para mostrar campeones.
