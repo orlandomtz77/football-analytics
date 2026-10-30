@@ -6,7 +6,12 @@ DATOS DE PRUEBA: los equipos y marcadores son ficticios, solo para verificar el 
 import pandas as pd
 import pytest
 
-from football_analytics.metrics import calcular_rendimiento_local_visitante, calcular_tabla_posiciones
+from football_analytics.metrics import (
+    calcular_evolucion_puntos,
+    calcular_rendimiento_local_visitante,
+    calcular_tabla_posiciones,
+    racha_mas_larga,
+)
 
 # Equipo A gana 2-0 a B; B empata 1-1 con C. D no juega.
 PARTIDOS_PRUEBA = pd.DataFrame({
@@ -96,3 +101,43 @@ def test_local_visitante_orden_y_consistencia_con_tabla():
     r = rendimiento.set_index("equipo").reindex(tabla.index)
     assert ((r["Pts_local"] + r["Pts_visitante"]) == tabla["Pts"]).all()
     assert ((r["PJ_local"] + r["PJ_visitante"]) == tabla["PJ"]).all()
+
+
+# B: pierde 0-2 con A (día 1), empata 1-1 con C (día 8), gana 3-0 a A (día 15).
+PARTIDOS_CON_FECHA = pd.DataFrame({
+    "fecha": pd.to_datetime(["2025-07-15", "2025-07-01", "2025-07-08"]),  # desordenados a propósito
+    "equipo_local": ["Equipo B", "Equipo A", "Equipo B"],
+    "equipo_visitante": ["Equipo A", "Equipo B", "Equipo C"],
+    "goles_local": [3, 2, 1],
+    "goles_visitante": [0, 0, 1],
+})
+
+
+def test_evolucion_ordena_por_fecha_y_acumula():
+    evolucion = calcular_evolucion_puntos(PARTIDOS_CON_FECHA)
+    b = evolucion[evolucion["equipo"] == "Equipo B"]
+    assert b["partido_n"].tolist() == [1, 2, 3]
+    assert b["rival"].tolist() == ["Equipo A", "Equipo C", "Equipo A"]
+    assert b["condicion"].tolist() == ["visitante", "local", "local"]
+    assert b["resultado"].tolist() == ["P", "E", "G"]
+    assert b["Pts_acumulados"].tolist() == [0, 1, 4]
+
+
+def test_evolucion_cuadra_con_tabla():
+    evolucion = calcular_evolucion_puntos(PARTIDOS_CON_FECHA)
+    finales = evolucion.groupby("equipo")["Pts_acumulados"].last()
+    tabla = calcular_tabla_posiciones(PARTIDOS_CON_FECHA).set_index("equipo")["Pts"]
+    assert finales.reindex(tabla.index).tolist() == tabla.tolist()
+
+
+def test_evolucion_requiere_fecha():
+    with pytest.raises(ValueError, match="fecha"):
+        calcular_evolucion_puntos(PARTIDOS_PRUEBA)
+
+
+def test_racha_mas_larga():
+    resultados = ["G", "G", "E", "G", "P", "G", "G", "G"]
+    assert racha_mas_larga(resultados, {"G"}) == 3
+    assert racha_mas_larga(resultados, {"G", "E"}) == 4
+    assert racha_mas_larga(resultados, {"P"}) == 1
+    assert racha_mas_larga([], {"G"}) == 0

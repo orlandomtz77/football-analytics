@@ -3,7 +3,7 @@
 ## Estado actual
 - Fase: 3 — dashboard publicado (MVP)
 - Última actualización: 2026-10-30
-- Objetivo activo: definir el siguiente módulo de análisis
+- Objetivo activo: evolución por equipo (tendencia y rachas)
 
 ## Completado
 - [x] Repositorio Git inicializado (sin commits todavía)
@@ -21,6 +21,7 @@
 - [x] Repositorio privado publicado en GitHub: https://github.com/orlandomtz77/football-analytics (verificado: visibilidad PRIVATE, 4 commits, sin archivos de datos)
 - [x] Descarga automática (`asegurar_datos` en `ingest.py`): si falta el procesado, descarga, valida y procesa una vez; sin archivos a medias si falla — implementado, probado (3 pruebas con descargador falso) y verificado de punta a punta en una copia limpia del repo (descarga real, 29 torneos sin errores)
 - [x] Dashboard publicado en Streamlit Community Cloud: https://ligamx-analytics.streamlit.app/ (verificado 2026-10-30: descarga automática OK, 29 torneos, mismos valores que en local; accesible sin iniciar sesión)
+- [x] Evolución por equipo: `calcular_evolucion_puntos` y `racha_mas_larga` en `metrics.py`, `grafico_evolucion_puntos` en `charts.py`, sección en el dashboard (selector de equipo, puntos, últimos 5, mejores rachas, gráfico vs. líder) — implementado y probado; puntos finales cuadran con la tabla en los 29 torneos; revisado visualmente (local, aún no desplegado)
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -43,6 +44,8 @@
 - Motivo: poder probar la lógica sin la interfaz.
 - Decisión: descarga automática con `urllib` (biblioteca estándar) y una sola vez por instalación.
 - Motivo: desplegar sin subir datos a Git, sin dependencias nuevas y sin cargar de peticiones a la fuente.
+- Decisión: el eje de la evolución es "partido n.º del equipo" (orden por fecha), no la jornada oficial.
+- Motivo: la fuente no trae jornadas; un partido pospuesto cambiaría el orden y no queremos inventar el dato.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -55,8 +58,8 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 30 passed (2026-10-30)
+- Resultado: 37 passed (2026-10-30)
 - Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales; revisar el gráfico con tema oscuro de Streamlit (fondo fijo claro)
 
 ## Próximo paso
-- Agregar al dashboard la evolución de puntos por jornada de un equipo (tendencia y rachas).
+- Subir los cambios para que se actualice la app publicada y verificarla en https://ligamx-analytics.streamlit.app/.

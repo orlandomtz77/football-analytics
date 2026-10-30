@@ -24,21 +24,29 @@ def _validar_partidos(partidos: pd.DataFrame) -> None:
 
 
 def _registros_por_equipo(partidos: pd.DataFrame) -> pd.DataFrame:
-    """Una fila por equipo y partido, con `condicion` ("local"/"visitante") y PJ/PG/PE/PP/GF/GC."""
+    """Una fila por equipo y partido, con `rival`, `condicion` ("local"/"visitante") y PJ/PG/PE/PP/GF/GC.
+
+    Si `partidos` trae `fecha`, se conserva.
+    """
     _validar_partidos(partidos)
 
     local = pd.DataFrame({
         "equipo": partidos["equipo_local"],
+        "rival": partidos["equipo_visitante"],
         "condicion": "local",
         "GF": partidos["goles_local"],
         "GC": partidos["goles_visitante"],
     })
     visitante = pd.DataFrame({
         "equipo": partidos["equipo_visitante"],
+        "rival": partidos["equipo_local"],
         "condicion": "visitante",
         "GF": partidos["goles_visitante"],
         "GC": partidos["goles_local"],
     })
+    if "fecha" in partidos.columns:
+        local.insert(0, "fecha", partidos["fecha"])
+        visitante.insert(0, "fecha", partidos["fecha"])
     registros = pd.concat([local, visitante], ignore_index=True)
 
     registros["PJ"] = 1
@@ -110,3 +118,44 @@ def calcular_rendimiento_local_visitante(
     resultado = ancho.reset_index()
     resultado = resultado.sort_values(["dif_PPP", "equipo"], ascending=[False, True], na_position="last")
     return resultado[columnas].reset_index(drop=True)
+
+
+def calcular_evolucion_puntos(
+    partidos: pd.DataFrame,
+    puntos_victoria: int = 3,
+    puntos_empate: int = 1,
+) -> pd.DataFrame:
+    """Puntos acumulados de cada equipo, partido a partido, en orden de fecha.
+
+    `partido_n` es el número de partido del equipo (1, 2, 3...), no la jornada oficial:
+    la fuente no trae jornadas y un partido pospuesto cambia el orden.
+    `resultado` es "G" (ganó), "E" (empató) o "P" (perdió).
+    """
+    if "fecha" not in partidos.columns:
+        raise ValueError("Se necesita la columna `fecha` para ordenar los partidos.")
+
+    registros = _registros_por_equipo(partidos)
+    registros["resultado"] = "E"
+    registros.loc[registros["PG"] == 1, "resultado"] = "G"
+    registros.loc[registros["PP"] == 1, "resultado"] = "P"
+    registros["Pts"] = registros["PG"] * puntos_victoria + registros["PE"] * puntos_empate
+
+    registros = registros.sort_values(["equipo", "fecha"], kind="stable")
+    registros["partido_n"] = registros.groupby("equipo").cumcount() + 1
+    registros["Pts_acumulados"] = registros.groupby("equipo")["Pts"].cumsum()
+
+    columnas = ["equipo", "partido_n", "fecha", "rival", "condicion", "GF", "GC",
+                "resultado", "Pts", "Pts_acumulados"]
+    return registros[columnas].reset_index(drop=True)
+
+
+def racha_mas_larga(resultados: Iterable[str], validos: set[str]) -> int:
+    """Mayor número de partidos seguidos cuyo resultado está en `validos`.
+
+    Ejemplos: validos={"G"} = racha de victorias; {"G", "E"} = racha sin perder.
+    """
+    mejor = actual = 0
+    for resultado in resultados:
+        actual = actual + 1 if resultado in validos else 0
+        mejor = max(mejor, actual)
+    return mejor

@@ -17,12 +17,14 @@ RAIZ = Path(__file__).resolve().parents[1]
 # Permite importar el paquete sin instalarlo (el código vive en src/).
 sys.path.insert(0, str(RAIZ / "src"))
 
-from football_analytics.charts import grafico_local_visitante  # noqa: E402
+from football_analytics.charts import grafico_evolucion_puntos, grafico_local_visitante  # noqa: E402
 from football_analytics.cleaning import ordenar_torneos  # noqa: E402
 from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
 from football_analytics.metrics import (  # noqa: E402
+    calcular_evolucion_puntos,
     calcular_rendimiento_local_visitante,
     calcular_tabla_posiciones,
+    racha_mas_larga,
 )
 
 # La ruta se puede cambiar con la variable de entorno LIGA_MX_DATOS.
@@ -38,7 +40,7 @@ def cargar_datos(ruta: str) -> tuple[pd.DataFrame, dict | None]:
 
 
 st.set_page_config(page_title="Liga MX — Análisis", page_icon="⚽", layout="wide")
-st.title("Liga MX: tabla y rendimiento local vs. visitante")
+st.title("Liga MX: tabla, local vs. visitante y evolución por equipo")
 
 if DESCARGA_AUTOMATICA and not RUTA_DATOS.exists():
     try:
@@ -135,6 +137,37 @@ st.plotly_chart(fig, theme=None, width="stretch")
 
 with st.expander("Ver datos del gráfico"):
     st.dataframe(rendimiento.round(2), hide_index=True, width="stretch")
+
+# --- Evolución por equipo ---
+st.subheader("¿Cómo fue el torneo de cada equipo?")
+evolucion = calcular_evolucion_puntos(regular)
+orden_tabla = tabla["Equipo"].tolist()  # del líder al último
+equipo = st.selectbox("Equipo", orden_tabla, index=0)
+# Se compara contra el líder; si el equipo es el líder, contra el segundo lugar.
+referencia = orden_tabla[0] if equipo != orden_tabla[0] else (orden_tabla[1] if len(orden_tabla) > 1 else None)
+
+del_equipo = evolucion[evolucion["equipo"] == equipo]
+resultados = del_equipo["resultado"].tolist()
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Puntos", int(del_equipo["Pts_acumulados"].iloc[-1]))
+col2.metric("Últimos 5", " ".join(resultados[-5:]),
+            help="Resultados más recientes, del más antiguo al más nuevo. G: ganó · E: empató · P: perdió.")
+col3.metric("Mejor racha de victorias", racha_mas_larga(resultados, {"G"}),
+            help="Mayor número de partidos seguidos ganados en esta fase regular.")
+col4.metric("Mejor racha sin perder", racha_mas_larga(resultados, {"G", "E"}),
+            help="Mayor número de partidos seguidos ganados o empatados.")
+
+fig_evolucion = grafico_evolucion_puntos(
+    evolucion,
+    equipo,
+    referencia=referencia,
+    titulo=f"{torneo}: puntos acumulados de {equipo}" + (f" vs. {referencia}" if referencia else ""),
+    nota="El eje es el número de partido del equipo por fecha, no la jornada oficial (la fuente no trae jornadas).",
+)
+st.plotly_chart(fig_evolucion, theme=None, width="stretch")
+
+with st.expander(f"Partidos de {equipo}"):
+    st.dataframe(del_equipo.drop(columns="equipo"), hide_index=True, width="stretch")
 
 # --- Partidos ---
 with st.expander(f"Partidos de {torneo} ({len(del_torneo)})"):

@@ -38,3 +38,33 @@ def test_grafico_con_tabla_vacia_no_falla():
 def test_grafico_muestra_nota_de_fuente():
     fig = grafico_local_visitante(RENDIMIENTO_PRUEBA, "Prueba", nota="Fuente: prueba")
     assert fig.layout.annotations[0].text == "Fuente: prueba"
+
+
+EVOLUCION_PRUEBA = pd.DataFrame({
+    "equipo": ["Equipo A", "Equipo A", "Equipo B", "Equipo B"],
+    "partido_n": [1, 2, 1, 2],
+    "fecha": pd.to_datetime(["2025-07-01", "2025-07-08", "2025-07-01", "2025-07-08"]),
+    "rival": ["Equipo B", "Equipo C", "Equipo A", "Equipo C"],
+    "condicion": ["local", "visitante", "visitante", "local"],
+    "GF": [2, 1, 0, 1], "GC": [0, 1, 2, 0],
+    "resultado": ["G", "E", "P", "G"],
+    "Pts": [3, 1, 0, 3], "Pts_acumulados": [3, 4, 0, 3],
+})
+
+
+def test_evolucion_con_referencia_dos_series_y_etiquetas():
+    from football_analytics.charts import grafico_evolucion_puntos
+
+    fig = grafico_evolucion_puntos(EVOLUCION_PRUEBA, "Equipo B", referencia="Equipo A")
+    assert [t.name for t in fig.data] == ["Equipo B", "Equipo A"]
+    assert list(fig.data[0].y) == [0, 3]
+    assert fig.layout.showlegend is True
+    assert {a.text for a in fig.layout.annotations} == {"Equipo B: 3", "Equipo A: 4"}
+
+
+def test_evolucion_sin_referencia_o_misma_referencia_una_serie():
+    from football_analytics.charts import grafico_evolucion_puntos
+
+    fig = grafico_evolucion_puntos(EVOLUCION_PRUEBA, "Equipo A", referencia="Equipo A")
+    assert len(fig.data) == 1
+    assert fig.layout.showlegend is False

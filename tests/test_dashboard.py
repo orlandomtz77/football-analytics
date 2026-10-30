@@ -52,3 +52,20 @@ def test_dashboard_sin_archivo_muestra_error_amigable(tmp_path, monkeypatch):
     at = AppTest.from_file(APP, default_timeout=60).run()
     assert not at.exception
     assert "No se encontró" in at.error[0].value
+
+
+def test_dashboard_evolucion_por_equipo(datos_procesados):
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    at.selectbox[0].set_value("Apertura 2025").run()
+    selector_equipo = at.selectbox[1]
+    # Tabla Apertura 2025 de prueba: A 6 pts, B 1 (DG -2), C 1 (DG -3).
+    assert selector_equipo.options == ["Equipo A", "Equipo B", "Equipo C"]
+    for equipo in selector_equipo.options:
+        at.selectbox[1].set_value(equipo).run()
+        assert not at.exception, equipo
+    at.selectbox[1].set_value("Equipo B").run()
+    indicadores = {m.label: m.value for m in at.metric}
+    # B: perdió 0-2 con A y empató 1-1 con C.
+    assert indicadores["Puntos"] == "1"
+    assert indicadores["Últimos 5"] == "P E"
+    assert indicadores["Mejor racha sin perder"] == "1"

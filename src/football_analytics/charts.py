@@ -87,3 +87,87 @@ def grafico_local_visitante(rendimiento: pd.DataFrame, titulo: str, nota: str | 
             xanchor="left", yanchor="top", font={"size": 11, "color": COLOR_TEXTO_SECUNDARIO},
         )
     return fig
+
+
+RESULTADO_TEXTO = {"G": "ganó", "E": "empató", "P": "perdió"}
+
+
+def grafico_evolucion_puntos(
+    evolucion: pd.DataFrame,
+    equipo: str,
+    referencia: str | None = None,
+    titulo: str = "",
+    nota: str | None = None,
+) -> go.Figure:
+    """Línea de puntos acumulados por partido de `equipo`, opcionalmente contra `referencia`.
+
+    Responde: ¿cómo fue sumando puntos mi equipo a lo largo del torneo?
+    `evolucion` es la salida de `calcular_evolucion_puntos`.
+    """
+    fig = go.Figure()
+    series = [(equipo, COLOR_LOCAL)]
+    if referencia and referencia != equipo:
+        series.append((referencia, COLOR_VISITANTE))
+
+    for nombre, color in series:
+        datos = evolucion[evolucion["equipo"] == nombre]
+        if datos.empty:
+            continue
+        marcador = datos["GF"].astype(str) + "-" + datos["GC"].astype(str)
+        fig.add_trace(go.Scatter(
+            x=datos["partido_n"],
+            y=datos["Pts_acumulados"],
+            mode="lines+markers",
+            name=nombre,
+            line={"color": color, "width": 2},
+            marker={"color": color, "size": 8, "line": {"color": "#fcfcfb", "width": 2}},
+            customdata=list(zip(
+                datos["fecha"].dt.strftime("%d/%m/%Y"),
+                datos["rival"],
+                datos["condicion"],
+                marcador,
+                datos["resultado"].map(RESULTADO_TEXTO),
+            )),
+            hovertemplate=(
+                "<b>" + nombre + "</b> — partido %{x}<br>"
+                "%{customdata[0]} · vs. %{customdata[1]} (%{customdata[2]})<br>"
+                "%{customdata[3]}: %{customdata[4]}<br>"
+                "Puntos acumulados: %{y}"
+                "<extra></extra>"
+            ),
+        ))
+        # Etiqueta directa al final de la línea (además de la leyenda).
+        ultimo = datos.iloc[-1]
+        fig.add_annotation(
+            x=ultimo["partido_n"], y=ultimo["Pts_acumulados"],
+            text=f"{nombre}: {ultimo['Pts_acumulados']}", showarrow=False,
+            xanchor="left", xshift=8, font={"size": 12, "color": COLOR_TEXTO},
+        )
+
+    max_partidos = int(evolucion["partido_n"].max()) if not evolucion.empty else 1
+    fig.update_layout(
+        title={"text": titulo, "font": {"color": COLOR_TEXTO, "size": 16}, "x": 0, "xanchor": "left"},
+        xaxis={
+            "title": "Partido n.º del equipo (orden por fecha)",
+            "range": [0.5, max_partidos + 0.5],
+            "dtick": 1,
+            "gridcolor": COLOR_REJILLA,
+            "zeroline": False,
+        },
+        yaxis={"title": "Puntos acumulados", "gridcolor": COLOR_REJILLA, "rangemode": "tozero"},
+        showlegend=len(series) > 1,
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.0, "xanchor": "left", "x": 0},
+        font={"color": COLOR_TEXTO_SECUNDARIO},
+        plot_bgcolor="#fcfcfb",
+        paper_bgcolor="#fcfcfb",
+        height=420,
+        # Margen derecho amplio para las etiquetas directas.
+        margin={"l": 70, "r": 170, "t": 80, "b": 90 if nota else 50},
+        hoverlabel={"bgcolor": "#fcfcfb", "font": {"color": COLOR_TEXTO}},
+    )
+    if nota:
+        fig.add_annotation(
+            text=nota, showarrow=False, xref="paper", yref="paper", x=0, y=0, yshift=-60,
+            xanchor="left", yanchor="top", font={"size": 11, "color": COLOR_TEXTO_SECUNDARIO},
+        )
+    return fig
