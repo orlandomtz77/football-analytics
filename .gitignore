@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Secretos
+.env
+
+# Datos: los crudos y procesados no se versionan (documentar cómo obtenerlos en data/README.md)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Notebooks y editores
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# Configuración local de Claude Code
+.claude/settings.local.json
