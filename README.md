@@ -38,7 +38,8 @@ data/README.md       documentación de fuentes
 src/football_analytics/
   ingest.py          carga del CSV de football-data.co.uk
   cleaning.py        torneo (Apertura/Clausura) y fase (regular/final)
-  metrics.py         tabla de posiciones
+  metrics.py         tabla de posiciones y rendimiento local/visitante
+  charts.py          gráficos con Plotly
 tests/               pruebas con pytest
 progreso.md          bitácora del proyecto
 ```

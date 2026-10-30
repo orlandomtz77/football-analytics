@@ -9,13 +9,14 @@
 - [x] Repositorio Git inicializado (sin commits todavía)
 - [x] Estructura de carpetas, `.gitignore`, `.env.example`, `requirements.txt`, `README.md`, `data/README.md`
 - [x] `calcular_tabla_posiciones` en `src/football_analytics/metrics.py` — implementado y probado
-- [x] Commit inicial `cbd7a4c`
+- [x] Commits `cbd7a4c` (estructura) y `781fe3d` (datos, limpieza, local/visitante)
 - [x] Investigación de fuentes de Liga MX (ver Fuentes de datos)
 - [x] `MEX.csv` descargado a `data/raw/` y documentado en `data/README.md`
 - [x] `ingest.py` (carga + validación de resultado) y `cleaning.py` (torneo y fase) — implementado y probado
 - [x] `data/processed/liga_mx_partidos.csv` generado (4,780 partidos)
 - [x] Tabla de fase regular Apertura 2025 verificada contra Wikipedia: coincide en los 18 equipos
 - [x] `calcular_rendimiento_local_visitante` en `metrics.py` (PPP local/visitante y `dif_PPP`) — implementado y probado; en Apertura 2025 los puntos local+visitante cuadran con la tabla verificada
+- [x] `charts.py`: `grafico_local_visitante` (gráfico de pesas con Plotly; paleta validada para daltonismo; forma distinta por condición; nota de fuente) — implementado, probado y revisado visualmente con datos del Apertura 2025
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
 ## En curso
@@ -31,7 +32,9 @@
 - Motivo: la fuente no trae esas columnas; la regla se verificó en los 29 torneos (enfrentamientos únicos y pausa de 3-13 días antes de la liguilla).
 - Decisión: comparar local/visitante con puntos por partido (PPP), no con puntos totales.
 - Motivo: en 17 jornadas un equipo juega 9 partidos en casa y 8 fuera (o al revés).
-- Decisión: dependencias mínimas (pandas, pytest); Streamlit/Plotly se agregan cuando se usen.
+- Decisión: gráfico de pesas (dumbbell) para local vs. visitante; azul = local (círculo), naranja = visitante (rombo).
+- Motivo: muestra en una sola vista ambos valores y la brecha; la forma del marcador evita depender solo del color.
+- Decisión: dependencias mínimas (pandas, pytest, plotly); Streamlit se agrega con el dashboard.
 - Motivo: evitar dependencias sin uso.
 
 ## Fuentes de datos
@@ -43,8 +46,8 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 17 passed (2026-10-30)
+- Resultado: 21 passed (2026-10-30)
 - Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales
 
 ## Próximo paso
-- Crear `charts.py` con un gráfico de PPP local vs. visitante por equipo (Plotly) como primer bloque del dashboard.
+- Crear `dashboard/app.py` con Streamlit: selector de torneo, tabla de posiciones y gráfico local vs. visitante, con fuente y fecha visibles.
