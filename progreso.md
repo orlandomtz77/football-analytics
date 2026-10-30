@@ -46,6 +46,8 @@
 - Motivo: desplegar sin subir datos a Git, sin dependencias nuevas y sin cargar de peticiones a la fuente.
 - Decisión: el eje de la evolución es "partido n.º del equipo" (orden por fecha), no la jornada oficial.
 - Motivo: la fuente no trae jornadas; un partido pospuesto cambiaría el orden y no queremos inventar el dato.
+- Decisión: `app.py` quita `football_analytics` de `sys.modules` al inicio de cada ejecución.
+- Motivo: tras un `git push`, Streamlit Cloud cargó el `app.py` nuevo con módulos viejos en memoria (ImportError en producción, 2026-10-30). Mover el script a la raíz NO lo resolvía (comprobado con un experimento); limpiar los módulos sí.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 

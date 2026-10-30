@@ -17,6 +17,12 @@ RAIZ = Path(__file__).resolve().parents[1]
 # Permite importar el paquete sin instalarlo (el código vive en src/).
 sys.path.insert(0, str(RAIZ / "src"))
 
+# Streamlit no recarga módulos fuera de dashboard/ cuando cambian (p. ej. tras un git pull
+# en Streamlit Cloud): app.py nuevo + módulos viejos en memoria = ImportError.
+# Quitarlos de sys.modules obliga a importar la versión actual en cada ejecución.
+for _modulo in [m for m in sys.modules if m == "football_analytics" or m.startswith("football_analytics.")]:
+    del sys.modules[_modulo]
+
 from football_analytics.charts import grafico_evolucion_puntos, grafico_local_visitante  # noqa: E402
 from football_analytics.cleaning import ordenar_torneos  # noqa: E402
 from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
