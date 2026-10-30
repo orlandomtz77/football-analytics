@@ -9,7 +9,7 @@
 - [x] Repositorio Git inicializado (sin commits todavía)
 - [x] Estructura de carpetas, `.gitignore`, `.env.example`, `requirements.txt`, `README.md`, `data/README.md`
 - [x] `calcular_tabla_posiciones` en `src/football_analytics/metrics.py` — implementado y probado
-- [x] Commits `cbd7a4c` (estructura), `781fe3d` (datos, limpieza, local/visitante) y `b1c5daf` (gráfico)
+- [x] Commits `cbd7a4c` (estructura), `781fe3d` (datos, limpieza, local/visitante) , `b1c5daf` (gráfico) y `f312c3f` (dashboard)
 - [x] Investigación de fuentes de Liga MX (ver Fuentes de datos)
 - [x] `MEX.csv` descargado a `data/raw/` y documentado en `data/README.md`
 - [x] `ingest.py` (carga + validación de resultado) y `cleaning.py` (torneo y fase) — implementado y probado
@@ -18,6 +18,7 @@
 - [x] `calcular_rendimiento_local_visitante` en `metrics.py` (PPP local/visitante y `dif_PPP`) — implementado y probado; en Apertura 2025 los puntos local+visitante cuadran con la tabla verificada
 - [x] `charts.py`: `grafico_local_visitante` (gráfico de pesas con Plotly; paleta validada para daltonismo; forma distinta por condición; nota de fuente) — implementado, probado y revisado visualmente con datos del Apertura 2025
 - [x] `dashboard/app.py` (Streamlit): selector de torneo, aviso de torneo incompleto, 4 indicadores, tabla de posiciones, gráfico local/visitante, partidos del torneo, fuente y fecha visibles — implementado, probado con AppTest (29 torneos sin errores) y revisado visualmente en escritorio (1280 px) y celular (400 px)
+- [x] Repositorio privado publicado en GitHub: https://github.com/orlandomtz77/football-analytics (verificado: visibilidad PRIVATE, 4 commits, sin archivos de datos)
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -54,4 +55,4 @@
 - Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales; revisar el gráfico con tema oscuro de Streamlit (fondo fijo claro)
 
 ## Próximo paso
-- Crear el repositorio en GitHub y subir el código (sin datos), como paso previo al despliegue en Streamlit Community Cloud.
+- Hacer que la app descargue y procese `MEX.csv` si no encuentra los datos (necesario para desplegar en Streamlit Community Cloud, ya que los datos no están en Git).
