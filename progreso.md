@@ -58,6 +58,8 @@
 - Motivo: Apertura 2019 tuvo 18 partidos; el torneo en curso y Clausura 2020 no son comparables.
 - Decisión: "jugó la fase final" sale de los partidos de liguilla en los datos; no se indica campeón.
 - Motivo: no está verificado cómo registra la fuente los partidos definidos en penales.
+- Decisión: franquicias reubicadas (p. ej. Monarcas → Mazatlan FC) se mantienen como equipos separados.
+- Motivo: decisión del usuario (2026-10-30); se respetan los nombres de la fuente y el historial de cada club por separado.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -74,4 +76,4 @@
 - Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales; revisar el gráfico con tema oscuro de Streamlit (fondo fijo claro)
 
 ## Próximo paso
-- Unificar franquicias reubicadas (p. ej. Monarcas → Mazatlan FC) en el historial, documentando la decisión.
+- Por definir con el usuario. Opciones: comparar dos equipos frente a frente (historial de enfrentamientos), o revisar el gráfico/tabla en tema oscuro.

@@ -48,6 +48,8 @@ Ninguna de las dos carpetas se sube a Git. Cada dataset se documenta aquí.
   - Clausura 2020 quedó incompleto (90 partidos, cancelado por COVID-19) y está marcado con
     `regular_completa = False`. Apertura 2019 tuvo 19 equipos.
   - Hay franquicias reubicadas (p. ej. Monarcas → Mazatlan FC) que la fuente nombra distinto.
+    **Decisión (2026-10-30):** se mantienen como equipos separados, tal como los nombra la fuente;
+    no se unifican historiales.
   - Solo resultados: no hay jugadores, tiros, eventos ni xG.
 - **Licencia / condiciones:** el sitio dice "My data is free"; no hay licencia formal de
   redistribución, por eso el archivo no se sube a Git.
