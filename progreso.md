@@ -3,7 +3,7 @@
 ## Estado actual
 - Fase: 3 — dashboard publicado (MVP)
 - Última actualización: 2026-10-30
-- Objetivo activo: evolución por equipo (tendencia y rachas)
+- Objetivo activo: dashboard para aficionados
 
 ## Completado
 - [x] Repositorio Git inicializado (sin commits todavía)
@@ -22,6 +22,7 @@
 - [x] Descarga automática (`asegurar_datos` en `ingest.py`): si falta el procesado, descarga, valida y procesa una vez; sin archivos a medias si falla — implementado, probado (3 pruebas con descargador falso) y verificado de punta a punta en una copia limpia del repo (descarga real, 29 torneos sin errores)
 - [x] Dashboard publicado en Streamlit Community Cloud: https://ligamx-analytics.streamlit.app/ (verificado 2026-10-30: descarga automática OK, 29 torneos, mismos valores que en local; accesible sin iniciar sesión)
 - [x] Evolución por equipo: `calcular_evolucion_puntos` y `racha_mas_larga` en `metrics.py`, `grafico_evolucion_puntos` en `charts.py`, sección en el dashboard (selector de equipo, puntos, últimos 5, mejores rachas, gráfico vs. líder) — implementado y probado; puntos finales cuadran con la tabla en los 29 torneos; revisado visualmente (local, aún no desplegado)
+- [x] Rediseño para aficionados (2026-10-30): datos del torneo en frases (`insights.py`), tabla con pestañas General/Local/Visitante, columnas JJ/JG/JE/JP/DIF/PTS, últimos 5 con ✅➖❌ y zonas de clasificación por torneo (`reglamento.py`, verificado en Wikipedia), ficha de equipo con posición, distancia al líder, récords y calendario (`vistas.py`). Gráfico de pesas retirado de la interfaz; gráfica de puntos acumulados movida a un desplegable — implementado, probado (51 pruebas, 29 torneos sin errores) y revisado en escritorio y celular
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -48,6 +49,10 @@
 - Motivo: la fuente no trae jornadas; un partido pospuesto cambiaría el orden y no queremos inventar el dato.
 - Decisión: `app.py` quita `football_analytics` de `sys.modules` al inicio de cada ejecución.
 - Motivo: tras un `git push`, Streamlit Cloud cargó el `app.py` nuevo con módulos viejos en memoria (ImportError en producción, 2026-10-30). Mover el script a la raíz NO lo resolvía (comprobado con un experimento); limpiar los módulos sí.
+- Decisión: público principal = aficionado (elegido por el usuario).
+- Motivo: las gráficas técnicas (PPP, pesas) eran difíciles de leer para alguien de deportes.
+- Decisión: zonas de clasificación solo por posición; no se modelan excepciones (tabla de cociente).
+- Motivo: el reglamento cambia por torneo y las excepciones requieren datos que la fuente no trae.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -60,8 +65,8 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 37 passed (2026-10-30)
+- Resultado: 51 passed (2026-10-30)
 - Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales; revisar el gráfico con tema oscuro de Streamlit (fondo fijo claro)
 
 ## Próximo paso
-- Subir los cambios para que se actualice la app publicada y verificarla en https://ligamx-analytics.streamlit.app/.
+- Comparar torneos de un mismo equipo (¿América rinde mejor en Apertura o en Clausura?) con los 14 años de datos.

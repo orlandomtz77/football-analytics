@@ -61,14 +61,20 @@ def calcular_tabla_posiciones(
     equipos: Iterable[str] | None = None,
     puntos_victoria: int = 3,
     puntos_empate: int = 1,
+    condicion: str | None = None,
 ) -> pd.DataFrame:
     """Calcula la tabla de posiciones (PJ, PG, PE, PP, GF, GC, DG, Pts).
 
     Cada partido aporta un registro al local y otro al visitante.
     `equipos` permite incluir equipos sin partidos (aparecen con ceros).
     Los puntos por victoria/empate son parámetros porque dependen del reglamento.
+    `condicion` ("local" o "visitante") limita la tabla a esos partidos; None = tabla general.
     """
+    if condicion not in (None, "local", "visitante"):
+        raise ValueError(f"condicion debe ser None, 'local' o 'visitante', no {condicion!r}")
     registros = _registros_por_equipo(partidos)
+    if condicion is not None:
+        registros = registros[registros["condicion"] == condicion]
     tabla = registros.groupby("equipo")[["PJ", "PG", "PE", "PP", "GF", "GC"]].sum()
 
     if equipos is not None:
@@ -159,3 +165,8 @@ def racha_mas_larga(resultados: Iterable[str], validos: set[str]) -> int:
         actual = actual + 1 if resultado in validos else 0
         mejor = max(mejor, actual)
     return mejor
+
+
+def ultimos_resultados(evolucion: pd.DataFrame, n: int = 5) -> pd.Series:
+    """Lista con los últimos `n` resultados ("G"/"E"/"P") de cada equipo, del más antiguo al más nuevo."""
+    return evolucion.groupby("equipo")["resultado"].agg(lambda r: list(r)[-n:])

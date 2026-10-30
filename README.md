@@ -3,7 +3,7 @@
 Dashboard de análisis de fútbol (competición objetivo: Liga MX), construido por módulos:
 resultados y tabla de posiciones → rendimiento de equipos → jugadores → eventos → xG → dashboard web.
 
-> Estado: dashboard publicado en https://ligamx-analytics.streamlit.app/ (tabla de posiciones, local vs. visitante y evolución por equipo) con datos de Liga MX 2012-2026; ver `progreso.md`.
+> Estado: dashboard publicado en https://ligamx-analytics.streamlit.app/ (vista para aficionados: datos del torneo, tabla General/Local/Visitante con zonas y ficha de equipo) con datos de Liga MX 2012-2026; ver `progreso.md`.
 
 ## Instalación (Windows)
 
@@ -55,6 +55,10 @@ src/football_analytics/
   cleaning.py        torneo (Apertura/Clausura) y fase (regular/final)
   metrics.py         tabla de posiciones, local/visitante, evolución y rachas
   charts.py          gráficos con Plotly
+  reglamento.py      zonas de clasificación por torneo
+  insights.py        datos del torneo en frases
+  formato.py         récords y racha con íconos
+  vistas.py          tablas listas para la interfaz
 tests/               pruebas con pytest
 progreso.md          bitácora del proyecto
 ```
