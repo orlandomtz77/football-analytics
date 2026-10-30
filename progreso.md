@@ -1,9 +1,9 @@
 # Progreso — Football Analytics
 
 ## Estado actual
-- Fase: 2 — dashboard local funcional
+- Fase: 3 — dashboard publicado (MVP)
 - Última actualización: 2026-10-30
-- Objetivo activo: publicar el repositorio y desplegar el dashboard
+- Objetivo activo: definir el siguiente módulo de análisis
 
 ## Completado
 - [x] Repositorio Git inicializado (sin commits todavía)
@@ -20,6 +20,7 @@
 - [x] `dashboard/app.py` (Streamlit): selector de torneo, aviso de torneo incompleto, 4 indicadores, tabla de posiciones, gráfico local/visitante, partidos del torneo, fuente y fecha visibles — implementado, probado con AppTest (29 torneos sin errores) y revisado visualmente en escritorio (1280 px) y celular (400 px)
 - [x] Repositorio privado publicado en GitHub: https://github.com/orlandomtz77/football-analytics (verificado: visibilidad PRIVATE, 4 commits, sin archivos de datos)
 - [x] Descarga automática (`asegurar_datos` en `ingest.py`): si falta el procesado, descarga, valida y procesa una vez; sin archivos a medias si falla — implementado, probado (3 pruebas con descargador falso) y verificado de punta a punta en una copia limpia del repo (descarga real, 29 torneos sin errores)
+- [x] Dashboard publicado en Streamlit Community Cloud: https://ligamx-analytics.streamlit.app/ (verificado 2026-10-30: descarga automática OK, 29 torneos, mismos valores que en local; accesible sin iniciar sesión)
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -58,4 +59,4 @@
 - Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales; revisar el gráfico con tema oscuro de Streamlit (fondo fijo claro)
 
 ## Próximo paso
-- Desplegar en Streamlit Community Cloud (requiere que el usuario conecte su cuenta de GitHub en share.streamlit.io) y verificar la URL pública.
+- Agregar al dashboard la evolución de puntos por jornada de un equipo (tendencia y rachas).
