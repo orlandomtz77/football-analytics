@@ -45,6 +45,18 @@ def asignar_fase(partidos: pd.DataFrame) -> pd.DataFrame:
     return resultado.reset_index(drop=True)
 
 
+def ordenar_torneos(torneos) -> list[str]:
+    """Ordena nombres como "Clausura 2026" del más reciente al más antiguo.
+
+    En un mismo año el Clausura (enero-junio) va antes que el Apertura (julio-diciembre).
+    """
+    def clave(torneo: str) -> tuple[int, int]:
+        nombre, anio = torneo.split()
+        return int(anio), 1 if nombre == "Apertura" else 0
+
+    return sorted(set(torneos), key=clave, reverse=True)
+
+
 def preparar_partidos(partidos: pd.DataFrame) -> pd.DataFrame:
     """Aplica todos los pasos de limpieza en orden."""
     return asignar_fase(asignar_torneo(partidos))

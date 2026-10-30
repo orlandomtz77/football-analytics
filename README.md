@@ -3,7 +3,7 @@
 Dashboard de análisis de fútbol (competición objetivo: Liga MX), construido por módulos:
 resultados y tabla de posiciones → rendimiento de equipos → jugadores → eventos → xG → dashboard web.
 
-> Estado: datos de resultados de Liga MX 2012-2026 cargados y tabla de posiciones verificada; ver `progreso.md`.
+> Estado: dashboard local funcional (tabla de posiciones y local vs. visitante por torneo) con datos de Liga MX 2012-2026; ver `progreso.md`.
 
 ## Instalación (Windows)
 
@@ -23,6 +23,17 @@ $env:PYTHONPATH = "src"
 python -m football_analytics.ingest data/raw/football-data_MEX_2026-10-30.csv data/processed/liga_mx_partidos.csv
 ```
 
+## Abrir el dashboard
+
+Con los datos procesados listos:
+
+```powershell
+streamlit run dashboard/app.py
+```
+
+Se abre en http://localhost:8501. Para usar otro archivo procesado, define la variable
+de entorno `LIGA_MX_DATOS` con su ruta.
+
 ## Ejecutar pruebas
 
 ```powershell
@@ -35,6 +46,7 @@ python -m pytest -q
 data/raw/            datos originales (no se versionan)
 data/processed/      datos limpios generados (no se versionan)
 data/README.md       documentación de fuentes
+dashboard/app.py     interfaz Streamlit (solo presentación)
 src/football_analytics/
   ingest.py          carga del CSV de football-data.co.uk
   cleaning.py        torneo (Apertura/Clausura) y fase (regular/final)

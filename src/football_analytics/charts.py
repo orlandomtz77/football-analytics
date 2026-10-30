@@ -64,7 +64,7 @@ def grafico_local_visitante(rendimiento: pd.DataFrame, titulo: str, nota: str | 
         ))
 
     fig.update_layout(
-        title={"text": titulo, "font": {"color": COLOR_TEXTO, "size": 18}},
+        title={"text": titulo, "font": {"color": COLOR_TEXTO, "size": 16}, "x": 0, "xanchor": "left"},
         xaxis={
             "title": "Puntos por partido (PPP)",
             "range": [-0.1, 3.1],
@@ -72,13 +72,13 @@ def grafico_local_visitante(rendimiento: pd.DataFrame, titulo: str, nota: str | 
             "gridcolor": COLOR_REJILLA,
             "zeroline": False,
         },
-        yaxis={"title": None, "gridcolor": COLOR_REJILLA},
+        yaxis={"title": None, "gridcolor": COLOR_REJILLA, "automargin": True},
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.0, "xanchor": "left", "x": 0},
         font={"color": COLOR_TEXTO_SECUNDARIO},
         plot_bgcolor="#fcfcfb",
         paper_bgcolor="#fcfcfb",
         height=max(400, 28 * len(equipos) + 140),
-        margin={"l": 10, "r": 20, "t": 90, "b": 90 if nota else 50},
+        margin={"l": 7 * max((len(e) for e in equipos), default=0) + 20, "r": 20, "t": 90, "b": 90 if nota else 50},
         hoverlabel={"bgcolor": "#fcfcfb", "font": {"color": COLOR_TEXTO}},
     )
     if nota:

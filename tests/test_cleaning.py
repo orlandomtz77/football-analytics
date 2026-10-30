@@ -6,8 +6,12 @@ DATOS DE PRUEBA: equipos y marcadores ficticios, con el formato de football-data
 import pandas as pd
 import pytest
 
-from football_analytics.cleaning import asignar_fase, asignar_torneo, preparar_partidos
-from football_analytics.ingest import cargar_partidos_football_data
+from football_analytics.cleaning import asignar_fase, asignar_torneo, ordenar_torneos, preparar_partidos
+from football_analytics.ingest import (
+    cargar_partidos_football_data,
+    cargar_partidos_procesados,
+    crear_metadatos,
+)
 
 # 3 equipos -> fase regular de 3 partidos; luego una final de ida y vuelta.
 CSV_PRUEBA = """﻿Country,League,Season,Date,Time,Home,Away,HG,AG,Res,PSCH,,
@@ -77,3 +81,32 @@ def test_fase_rechaza_enfrentamiento_repetido_en_regular(ruta_csv):
     partidos.loc[1, "fecha"] = pd.Timestamp("2025-07-06")
     with pytest.raises(ValueError, match="repetidos"):
         asignar_fase(partidos)
+
+
+def test_ordenar_torneos_mas_reciente_primero():
+    torneos = ["Apertura 2024", "Clausura 2025", "Apertura 2025", "Clausura 2025"]
+    assert ordenar_torneos(torneos) == ["Apertura 2025", "Clausura 2025", "Apertura 2024"]
+
+
+def test_procesado_ida_y_vuelta_con_metadatos(ruta_csv, tmp_path):
+    import json
+
+    partidos = preparar_partidos(cargar_partidos_football_data(ruta_csv))
+    salida = tmp_path / "procesado.csv"
+    partidos.to_csv(salida, index=False)
+    metadatos = crear_metadatos(partidos, ruta_csv)
+    salida.with_suffix(".meta.json").write_text(json.dumps(metadatos), encoding="utf-8")
+
+    leidos, meta = cargar_partidos_procesados(salida)
+    assert len(leidos) == 6
+    assert leidos["fecha"].dtype.kind == "M"  # fechas como datetime
+    assert meta["partidos"] == 6
+    assert meta["fecha_min"] == "2025-07-05"
+    assert meta["fuente"] == "football-data.co.uk"
+
+
+def test_procesado_sin_metadatos_devuelve_none(ruta_csv, tmp_path):
+    salida = tmp_path / "procesado.csv"
+    preparar_partidos(cargar_partidos_football_data(ruta_csv)).to_csv(salida, index=False)
+    _, meta = cargar_partidos_procesados(salida)
+    assert meta is None

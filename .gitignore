@@ -21,3 +21,6 @@ data/processed/*
 
 # Configuración local de Claude Code
 .claude/settings.local.json
+
+# Capturas de pruebas visuales
+.playwright-mcp/
