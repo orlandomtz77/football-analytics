@@ -27,14 +27,18 @@ from football_analytics.charts import grafico_evolucion_puntos, grafico_historia
 from football_analytics.cleaning import ordenar_torneos  # noqa: E402
 from football_analytics.formato import cantidad  # noqa: E402
 from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
-from football_analytics.insights import datos_destacados, datos_historial  # noqa: E402
+from football_analytics.insights import datos_cara_a_cara, datos_destacados, datos_historial  # noqa: E402
 from football_analytics.metrics import calcular_evolucion_puntos  # noqa: E402
 from football_analytics.reglamento import zonas_del_torneo  # noqa: E402
 from football_analytics.vistas import (  # noqa: E402
+    CLASICOS,
     calendario_equipo,
+    enfrentamientos,
     ficha_equipo,
     historial_equipo,
+    resumen_enfrentamientos,
     tabla_aficionado,
+    tabla_enfrentamientos,
 )
 
 # La ruta se puede cambiar con la variable de entorno LIGA_MX_DATOS.
@@ -230,6 +234,40 @@ with st.expander("Ver tabla del historial"):
         Pos=historial["Pos"].astype(str) + ".º de " + historial["Equipos"].astype(str),
     ).drop(columns=["Equipos", "Completo"])
     st.dataframe(tabla_historial, hide_index=True, width="stretch")
+
+# --- Cara a cara ---
+st.subheader("⚔️ Cara a cara")
+OTRO = "Elegir dos equipos…"
+opciones = [f"{nombre}: {a} vs. {b}" for nombre, (a, b) in CLASICOS.items()] + [OTRO]
+eleccion = st.selectbox("Enfrentamiento", opciones, index=0)
+if eleccion == OTRO:
+    todos = sorted(set(partidos["equipo_local"]) | set(partidos["equipo_visitante"]))
+    col1, col2 = st.columns(2)
+    equipo_a = col1.selectbox("Equipo", todos, index=todos.index(equipo) if equipo in todos else 0)
+    rivales = [e for e in todos if e != equipo_a]
+    equipo_b = col2.selectbox("Rival", rivales, index=0)
+else:
+    equipo_a, equipo_b = CLASICOS[eleccion.split(":")[0]]
+
+cara = enfrentamientos(partidos, equipo_a, equipo_b)
+resumen = resumen_enfrentamientos(cara)
+if resumen["partidos"] == 0:
+    st.info(f"{equipo_a} y {equipo_b} no se enfrentaron en Liga MX entre los datos disponibles (desde 2012).")
+else:
+    col1, col2, col3 = st.columns(3)
+    col1.metric(f"Ganó {equipo_a}", resumen["victorias"])
+    col2.metric("Empates", resumen["empates"])
+    col3.metric(f"Ganó {equipo_b}", resumen["derrotas"])
+    for frase in datos_cara_a_cara(resumen, equipo_a, equipo_b):
+        st.markdown(f"- {frase}")
+    st.markdown(f"**Últimos 5 de {equipo_a}:** {resumen['ultimos_5']}")
+    with st.expander(f"Ver los {resumen['partidos']} partidos"):
+        st.dataframe(tabla_enfrentamientos(cara), hide_index=True, width="stretch")
+    st.caption(
+        "Solo partidos de Liga MX desde el Apertura 2012, fase regular y liguilla (no incluye Copa MX, "
+        "Concacaf ni amistosos). Cada partido cuenta por su marcador: en liguilla, la serie pudo definirse "
+        "por global o penales."
+    )
 
 # --- Partidos del torneo ---
 with st.expander(f"Todos los partidos de {torneo} ({len(del_torneo)})"):

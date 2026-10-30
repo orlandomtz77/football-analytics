@@ -85,3 +85,20 @@ def test_dashboard_historial(datos_procesados):
     textos = " ".join(m.value for m in at.markdown)
     # Datos de prueba: A jugó Apertura 2025 (6 pts) y Clausura 2026 (1 partido, 3 pts).
     assert "**Torneos en los datos:** 2 (desde Apertura 2025)." in textos
+
+
+def test_dashboard_cara_a_cara(datos_procesados):
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    # Los clásicos no existen en los datos de prueba: mensaje claro, sin error.
+    assert not at.exception
+    assert any("no se enfrentaron" in i.value for i in at.info)
+
+    at.selectbox[2].set_value("Elegir dos equipos…").run()
+    at.selectbox[3].set_value("Equipo A").run()
+    at.selectbox[4].set_value("Equipo B").run()
+    assert not at.exception
+    indicadores = {m.label: m.value for m in at.metric}
+    # Datos de prueba: A 2-0 B (regular), B 1-0 A y A 2-2 B (fase final).
+    assert indicadores["Ganó Equipo A"] == "1"
+    assert indicadores["Empates"] == "1"
+    assert indicadores["Ganó Equipo B"] == "1"

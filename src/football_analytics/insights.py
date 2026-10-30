@@ -99,3 +99,33 @@ def datos_historial(historial: pd.DataFrame, equipo: str) -> list[str]:
             f"(obtiene en promedio el {a} % de los puntos posibles en Apertura y el {c} % en Clausura)."
         )
     return frases
+
+
+def datos_cara_a_cara(resumen: dict, equipo: str, rival: str) -> list[str]:
+    """Frases del cara a cara (salida de `vistas.resumen_enfrentamientos`)."""
+    if resumen["partidos"] == 0:
+        return []
+    v, e, d = resumen["victorias"], resumen["empates"], resumen["derrotas"]
+    if v == d:
+        balance = "el historial está parejo"
+    else:
+        lider, ventaja = (equipo, v - d) if v > d else (rival, d - v)
+        balance = f"{lider} lleva ventaja por {cantidad(ventaja, 'victoria', 'victorias')}"
+    frases = [
+        f"📊 **Balance:** en {cantidad(resumen['partidos'], 'partido', 'partidos')}, {balance} "
+        f"({equipo} {v} · empates {e} · {rival} {d}).",
+        f"⚽ **Goles:** {equipo} {resumen['goles_a_favor']} · {rival} {resumen['goles_en_contra']}.",
+    ]
+    ultimo = resumen["ultimo"]
+    frases.append(
+        f"🕐 **Último partido:** {ultimo['Local']} {ultimo['Marcador']} {ultimo['Visitante']} "
+        f"({ultimo['Torneo']}, {ultimo['Fecha']:%d/%m/%Y})."
+    )
+    for clave, quien in (("mayor_victoria", equipo), ("mayor_derrota", rival)):
+        partido = resumen[clave]
+        if partido is not None:
+            frases.append(
+                f"💥 **Victoria más amplia de {quien}:** {partido['Local']} {partido['Marcador']} {partido['Visitante']} "
+                f"({partido['Torneo']})."
+            )
+    return frases

@@ -114,3 +114,68 @@ def historial_equipo(partidos: pd.DataFrame, equipo: str) -> pd.DataFrame:
         })
     return pd.DataFrame(filas, columns=["Torneo", "Pos", "Equipos", "PTS", "JJ", "Récord", "DIF",
                                         "% puntos", "Fase final", "Completo"])
+
+
+# Clásicos de Liga MX con los nombres que usa la fuente.
+CLASICOS = {
+    "Clásico Nacional": ("Club America", "Guadalajara Chivas"),
+    "Clásico Regio": ("Tigres UANL", "Monterrey"),
+    "Clásico Capitalino": ("Club America", "UNAM Pumas"),
+    "Clásico Joven": ("Club America", "Cruz Azul"),
+}
+
+
+def enfrentamientos(partidos: pd.DataFrame, equipo: str, rival: str) -> pd.DataFrame:
+    """Partidos entre `equipo` y `rival` (todas las fases), del más reciente al más antiguo.
+
+    `Resultado` es desde la perspectiva de `equipo`.
+    """
+    entre = partidos[
+        ((partidos["equipo_local"] == equipo) & (partidos["equipo_visitante"] == rival))
+        | ((partidos["equipo_local"] == rival) & (partidos["equipo_visitante"] == equipo))
+    ].sort_values("fecha", ascending=False)
+
+    es_local = entre["equipo_local"] == equipo
+    goles_equipo = entre["goles_local"].where(es_local, entre["goles_visitante"])
+    goles_rival = entre["goles_visitante"].where(es_local, entre["goles_local"])
+    resultado = pd.Series("E", index=entre.index)
+    resultado = resultado.mask(goles_equipo > goles_rival, "G").mask(goles_equipo < goles_rival, "P")
+
+    return pd.DataFrame({
+        "Fecha": entre["fecha"],
+        "Torneo": entre["torneo"],
+        "Fase": entre["fase"].map({"regular": "Regular", "final": "Liguilla / fase final"}),
+        "Local": entre["equipo_local"],
+        "Marcador": entre["goles_local"].astype(str) + "-" + entre["goles_visitante"].astype(str),
+        "Visitante": entre["equipo_visitante"],
+        "goles_equipo": goles_equipo,
+        "goles_rival": goles_rival,
+        "resultado": resultado,
+    }).reset_index(drop=True)
+
+
+def resumen_enfrentamientos(cara: pd.DataFrame) -> dict:
+    """Totales de un cara a cara (salida de `enfrentamientos`)."""
+    if cara.empty:
+        return {"partidos": 0}
+    diferencia = cara["goles_equipo"] - cara["goles_rival"]
+    return {
+        "partidos": len(cara),
+        "victorias": int((cara["resultado"] == "G").sum()),
+        "empates": int((cara["resultado"] == "E").sum()),
+        "derrotas": int((cara["resultado"] == "P").sum()),
+        "goles_a_favor": int(cara["goles_equipo"].sum()),
+        "goles_en_contra": int(cara["goles_rival"].sum()),
+        "ultimos_5": forma_con_iconos(cara["resultado"].iloc[:5].iloc[::-1]),  # del más antiguo al más nuevo
+        "ultimo": cara.iloc[0],
+        "mayor_victoria": cara.loc[diferencia.idxmax()] if diferencia.max() > 0 else None,
+        "mayor_derrota": cara.loc[diferencia.idxmin()] if diferencia.min() < 0 else None,
+    }
+
+
+def tabla_enfrentamientos(cara: pd.DataFrame) -> pd.DataFrame:
+    """Versión para mostrar: fecha legible y resultado con ícono."""
+    return cara.assign(
+        Fecha=cara["Fecha"].dt.strftime("%d/%m/%Y"),
+        Resultado=cara["resultado"].map(lambda r: f"{ICONO_RESULTADO[r]} {TEXTO_RESULTADO[r]}"),
+    ).drop(columns=["goles_equipo", "goles_rival", "resultado"])

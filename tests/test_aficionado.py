@@ -223,3 +223,49 @@ def test_datos_historial_compara_apertura_y_clausura():
     assert ("**Apertura vs. Clausura:** Equipo A rinde mejor en Apertura "
             "(obtiene en promedio el 100 % de los puntos posibles en Apertura y el 0 % en Clausura).") in frases
     assert "**Peor torneo:** Clausura 2025 (0 pts, 2.º lugar)." in frases
+
+
+# --- Cara a cara ---
+# En _dataset_dos_torneos, A vs B: A 2-0 B (regular), B 1-0 A (final), B 2-1 A (Clausura 2025).
+
+def test_enfrentamientos_desde_perspectiva_del_equipo():
+    from football_analytics.vistas import enfrentamientos
+
+    cara = enfrentamientos(_dataset_dos_torneos(), "Equipo A", "Equipo B")
+    assert cara["Marcador"].tolist() == ["2-1", "1-0", "2-0"]  # más reciente primero
+    assert cara["resultado"].tolist() == ["P", "P", "G"]
+    assert cara["Fase"].tolist() == ["Regular", "Liguilla / fase final", "Regular"]
+    # Desde B el resultado se invierte.
+    assert enfrentamientos(_dataset_dos_torneos(), "Equipo B", "Equipo A")["resultado"].tolist() == ["G", "G", "P"]
+
+
+def test_resumen_y_frases_cara_a_cara():
+    from football_analytics.insights import datos_cara_a_cara
+    from football_analytics.vistas import enfrentamientos, resumen_enfrentamientos
+
+    resumen = resumen_enfrentamientos(enfrentamientos(_dataset_dos_torneos(), "Equipo A", "Equipo B"))
+    assert (resumen["victorias"], resumen["empates"], resumen["derrotas"]) == (1, 0, 2)
+    assert (resumen["goles_a_favor"], resumen["goles_en_contra"]) == (3, 3)
+    assert resumen["ultimos_5"] == "✅ ❌ ❌"
+
+    texto = "\n".join(datos_cara_a_cara(resumen, "Equipo A", "Equipo B"))
+    assert ("**Balance:** en 3 partidos, Equipo B lleva ventaja por 1 victoria "
+            "(Equipo A 1 · empates 0 · Equipo B 2).") in texto
+    assert "**Último partido:** Equipo B 2-1 Equipo A (Clausura 2025, 29/07/2024)." in texto
+    assert "**Victoria más amplia de Equipo A:** Equipo A 2-0 Equipo B (Apertura 2024)." in texto
+
+
+def test_cara_a_cara_sin_partidos():
+    from football_analytics.insights import datos_cara_a_cara
+    from football_analytics.vistas import enfrentamientos, resumen_enfrentamientos
+
+    resumen = resumen_enfrentamientos(enfrentamientos(_dataset_dos_torneos(), "Equipo C", "Equipo Z"))
+    assert resumen == {"partidos": 0}
+    assert datos_cara_a_cara(resumen, "Equipo C", "Equipo Z") == []
+
+
+def test_clasicos_usan_nombres_de_la_fuente():
+    from football_analytics.vistas import CLASICOS
+
+    nombres_fuente = {"Club America", "Guadalajara Chivas", "Tigres UANL", "Monterrey", "UNAM Pumas", "Cruz Azul"}
+    assert {e for par in CLASICOS.values() for e in par} == nombres_fuente
