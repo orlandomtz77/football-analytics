@@ -6,7 +6,7 @@ DATOS DE PRUEBA: los equipos y marcadores son ficticios, solo para verificar el 
 import pandas as pd
 import pytest
 
-from football_analytics.metrics import calcular_tabla_posiciones
+from football_analytics.metrics import calcular_rendimiento_local_visitante, calcular_tabla_posiciones
 
 # Equipo A gana 2-0 a B; B empata 1-1 con C. D no juega.
 PARTIDOS_PRUEBA = pd.DataFrame({
@@ -66,3 +66,33 @@ def test_rechaza_goles_negativos():
 def test_rechaza_columnas_faltantes():
     with pytest.raises(ValueError, match="Faltan columnas"):
         calcular_tabla_posiciones(PARTIDOS_PRUEBA.drop(columns="goles_local"))
+
+
+def test_local_visitante_separa_condiciones():
+    rendimiento = calcular_rendimiento_local_visitante(PARTIDOS_PRUEBA).set_index("equipo")
+    # B fue local (1-1 vs C) y visitante (0-2 vs A).
+    b = rendimiento.loc["Equipo B"]
+    assert (b["PJ_local"], b["Pts_local"], b["GF_local"], b["GC_local"]) == (1, 1, 1, 1)
+    assert (b["PJ_visitante"], b["Pts_visitante"], b["GF_visitante"], b["GC_visitante"]) == (1, 0, 0, 2)
+    assert b["PPP_local"] == 1.0
+    assert b["PPP_visitante"] == 0.0
+    assert b["dif_PPP"] == 1.0
+
+
+def test_local_visitante_sin_partidos_en_una_condicion_no_divide_entre_cero():
+    rendimiento = calcular_rendimiento_local_visitante(PARTIDOS_PRUEBA).set_index("equipo")
+    a = rendimiento.loc["Equipo A"]  # solo jugó de local
+    assert a["PJ_visitante"] == 0
+    assert pd.isna(a["PPP_visitante"])
+    assert pd.isna(a["dif_PPP"])
+
+
+def test_local_visitante_orden_y_consistencia_con_tabla():
+    rendimiento = calcular_rendimiento_local_visitante(PARTIDOS_PRUEBA)
+    # B tiene dif_PPP definida; A y C (sin dato) van al final por nombre.
+    assert rendimiento["equipo"].tolist() == ["Equipo B", "Equipo A", "Equipo C"]
+
+    tabla = calcular_tabla_posiciones(PARTIDOS_PRUEBA).set_index("equipo")
+    r = rendimiento.set_index("equipo").reindex(tabla.index)
+    assert ((r["Pts_local"] + r["Pts_visitante"]) == tabla["Pts"]).all()
+    assert ((r["PJ_local"] + r["PJ_visitante"]) == tabla["PJ"]).all()
