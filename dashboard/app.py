@@ -30,7 +30,7 @@ from football_analytics.campeones import (  # noqa: E402
     validar_campeones,
 )
 from football_analytics.charts import grafico_evolucion_puntos, grafico_historial_puntos  # noqa: E402
-from football_analytics.cleaning import ordenar_torneos  # noqa: E402
+from football_analytics.cleaning import convertir_a_hora_mexico, ordenar_torneos  # noqa: E402
 from football_analytics.correcciones import aplicar_correcciones, cargar_correcciones  # noqa: E402
 from football_analytics.formato import cantidad  # noqa: E402
 from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
@@ -68,7 +68,8 @@ def cargar_datos(ruta: str) -> tuple[pd.DataFrame, dict | None]:
         partidos, _ = aplicar_correcciones(partidos, cargar_correcciones())
     except (OSError, ValueError):
         partidos = partidos.assign(resultado_administrativo=False)
-    return partidos, metadatos
+    # La fuente usa la hora del Reino Unido; se muestra la del centro de México.
+    return convertir_a_hora_mexico(partidos), metadatos
 
 
 def mostrar_indicadores(indicadores: list[tuple[str, object, str | None]]) -> None:
@@ -162,7 +163,7 @@ mostrar_indicadores([
 if metadatos:
     st.caption(
         f"Fuente: [{metadatos['fuente']}]({metadatos['url']}), datos obtenidos el {metadatos['fecha_obtencion']} "
-        f"con partidos del {metadatos['fecha_min']} al {metadatos['fecha_max']}."
+        f"con partidos del {partidos['fecha'].min():%d/%m/%Y} al {partidos['fecha'].max():%d/%m/%Y}."
         + (f" Campeones: [{FUENTE_CAMPEONES}]({FUENTE_CAMPEONES_URL})." if campeones is not None else "")
     )
 else:
@@ -330,6 +331,7 @@ with pestana_partidos:
     st.caption(f"{len(del_torneo)} partidos del {torneo}, fase regular y fase final.")
     vista = pd.DataFrame({
         "Fecha": del_torneo["fecha"].dt.strftime("%d/%m/%Y"),
+        "Hora": del_torneo["hora"],
         "Fase": del_torneo["fase"].map({"regular": "Regular", "final": "Liguilla / fase final"}),
         "Local": del_torneo["equipo_local"],
         "Marcador": del_torneo["goles_local"].astype(str) + "-" + del_torneo["goles_visitante"].astype(str),
@@ -346,8 +348,8 @@ with pestana_partidos:
             f"Resultado administrativo (la liga cambió el marcador en la mesa; la tabla usa el oficial): {lista}."
         )
     st.caption(
-        "Fecha según la fuente: en partidos de noche suele aparecer un día después, porque la fuente usa "
-        "la hora del Reino Unido."
+        "Fecha y hora del centro de México (la fuente usa la hora del Reino Unido y se convierte). "
+        "Los partidos en Tijuana se juegan en hora del Pacífico."
     )
 
 st.divider()

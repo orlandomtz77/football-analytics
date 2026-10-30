@@ -39,11 +39,13 @@ def aplicar_correcciones(partidos: pd.DataFrame, correcciones: pd.DataFrame) -> 
     """
     corregidos = partidos.copy()
     corregidos["resultado_administrativo"] = False
+    # La lista usa la fecha de la fuente; si ya se convirtió a hora de México, está en `fecha_fuente`.
+    fecha_fuente = corregidos["fecha_fuente"] if "fecha_fuente" in corregidos.columns else corregidos["fecha"]
     problemas = []
     for _, c in correcciones.iterrows():
         mascara = (
             (corregidos["torneo"] == c["torneo"])
-            & (corregidos["fecha"].dt.normalize() == c["fecha_fuente"])
+            & (fecha_fuente.dt.normalize() == c["fecha_fuente"])
             & (corregidos["equipo_local"] == c["equipo_local"])
             & (corregidos["equipo_visitante"] == c["equipo_visitante"])
             & (corregidos["goles_local"] == c["goles_local_cancha"])

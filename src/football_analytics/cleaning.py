@@ -60,3 +60,28 @@ def ordenar_torneos(torneos) -> list[str]:
 def preparar_partidos(partidos: pd.DataFrame) -> pd.DataFrame:
     """Aplica todos los pasos de limpieza en orden."""
     return asignar_fase(asignar_torneo(partidos))
+
+
+# La fuente usa la hora del Reino Unido (verificado con finales de 2016, 2019 y 2023 en invierno y verano).
+ZONA_FUENTE = "Europe/London"
+ZONA_MEXICO = "America/Mexico_City"  # hora del centro, la de las transmisiones
+
+
+def convertir_a_hora_mexico(partidos: pd.DataFrame) -> pd.DataFrame:
+    """Copia con `fecha` en hora del centro de México (fecha y hora de inicio) y la columna `hora` ("HH:MM").
+
+    La fecha original de la fuente queda en `fecha_fuente`. Los partidos de noche aparecen en la fuente
+    un día después. En la noche de octubre en que el Reino Unido atrasa el reloj, la 01:00 se repite:
+    se toma la de horario normal (verificado en dos partidos de 2023 y 2024). Los equipos de Tijuana
+    juegan en hora del Pacífico, pero aquí se muestra la hora del centro.
+    """
+    inicio = pd.to_datetime(
+        partidos["fecha"].dt.strftime("%Y-%m-%d") + " " + partidos["hora_fuente"].str.strip(),
+        format="%Y-%m-%d %H:%M",
+    )
+    en_mexico = (
+        inicio.dt.tz_localize(ZONA_FUENTE, ambiguous=False, nonexistent="shift_forward")
+        .dt.tz_convert(ZONA_MEXICO)
+        .dt.tz_localize(None)
+    )
+    return partidos.assign(fecha_fuente=partidos["fecha"], fecha=en_mexico, hora=en_mexico.dt.strftime("%H:%M"))

@@ -158,3 +158,27 @@ def test_asegurar_datos_rechaza_archivo_con_formato_inesperado(tmp_path):
     with pytest.raises(ValueError, match="Faltan columnas"):
         asegurar_datos(tmp_path / "liga.csv", tmp_path / "raw", descargar=descargador_html)
     assert list((tmp_path / "raw").iterdir()) == []
+
+
+# --- Hora de México ---
+# Casos verificados contra la hora oficial de inicio (Wikipedia y medios; ver data/README.md).
+
+def test_convertir_a_hora_mexico():
+    from football_analytics.cleaning import convertir_a_hora_mexico
+
+    partidos = pd.DataFrame({
+        "fecha": pd.to_datetime(["2016-12-23", "2019-05-27", "2023-05-29", "2023-12-18", "2024-10-27", "2025-07-05"]),
+        "hora_fuente": ["03:00", "02:06", "02:35", "01:30", "01:00", " 01:00"],
+    })
+    convertidos = convertir_a_hora_mexico(partidos)
+    assert convertidos["fecha"].dt.strftime("%Y-%m-%d %H:%M").tolist() == [
+        "2016-12-22 21:00",  # final Apertura 2016, invierno
+        "2019-05-26 20:06",  # final Clausura 2019: Reino Unido y México en horario de verano
+        "2023-05-28 19:35",  # final Clausura 2023: México ya sin horario de verano
+        "2023-12-17 19:30",  # final Apertura 2023
+        "2024-10-26 19:00",  # noche del cambio de horario en Reino Unido: 01:00 repetida -> horario normal
+        "2025-07-04 18:00",  # hora con espacio al inicio
+    ]
+    assert convertidos["hora"].tolist() == ["21:00", "20:06", "19:35", "19:30", "19:00", "18:00"]
+    assert convertidos["fecha_fuente"].equals(partidos["fecha"])
+    assert partidos["fecha"].iloc[0] == pd.Timestamp("2016-12-23")  # no modifica el original

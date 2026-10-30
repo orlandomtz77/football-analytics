@@ -29,6 +29,7 @@
 - [x] Rediseño visual (2026-10-30): tema propio en `.streamlit/config.toml` (Barlow Condensed para titulares, Barlow para texto; acento azul de las gráficas; modo oscuro verde noche `#0b1310`), titular calculado con datos (`titular_torneo` en `insights.py`: terminado, en curso o cancelado; explica el desempate si hay empate en puntos), pestañas Tabla, Lo destacado, Mi equipo, Cara a cara y Partidos, e indicadores en filas que se acomodan en celular — implementado, probado (67 pruebas) y revisado en escritorio (1280 px) y celular (400 px), modo claro y oscuro
 - [x] Campeones (2026-10-30): `data/reference/campeones_liga_mx.csv` (Wikipedia, 27 torneos) y `campeones.py`; validados contra las finales de los datos (27 de 27) y contra Wikipedia en español (17 torneos). Titular "X, campeón del torneo" con cómo se definió la final; historial con "🏆 Campeón"/"Subcampeón", conteo de títulos y trofeos en la gráfica — implementado, probado y revisado visualmente
 - [x] Resultados administrativos (2026-10-30): `data/reference/resultados_administrativos.csv` y `correcciones.py`; Clausura 2021 Atlas-América corregido a 3-0; la tabla coincide con Wikipedia — implementado y probado
+- [x] Hora de México (2026-10-30): la fuente usa hora del Reino Unido (verificado con 8 partidos de final y 2 de la noche del cambio de horario); `convertir_a_hora_mexico` en `cleaning.py` se aplica al cargar; la pestaña Partidos muestra fecha y hora del centro — implementado, probado y revisado con datos reales
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -89,8 +90,8 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 83 passed (2026-10-30)
-- Pendientes: convertir fecha/hora de la fuente a hora de México
+- Resultado: 85 passed (2026-10-30)
+- Pendientes: ninguno conocido
 
 ## Próximo paso
-- Convertir la fecha y hora de la fuente a hora de México (la fuente usa hora del Reino Unido: los partidos de noche aparecen un día después).
+- Por decidir con el usuario. Ideas: buscar otros resultados administrativos comparando las tablas completas con Wikipedia; o agregar una vista por jornada con los partidos de la semana.

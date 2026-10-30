@@ -58,3 +58,13 @@ def test_archivo_real_del_repositorio_carga():
     correcciones = cargar_correcciones(RUTA_CORRECCIONES)
     assert len(correcciones) >= 1
     assert correcciones["fuente_url"].str.startswith("https://").all()
+
+
+def test_aplica_despues_de_convertir_a_hora_de_mexico(tmp_path):
+    from football_analytics.cleaning import convertir_a_hora_mexico
+
+    # 01:00 en Reino Unido del 8 de julio = 7 de julio en México: la corrección usa la fecha de la fuente.
+    partidos = convertir_a_hora_mexico(_partidos().assign(hora_fuente="01:00"))
+    corregidos, problemas = aplicar_correcciones(partidos, _correcciones(tmp_path))
+    assert problemas == []
+    assert corregidos["resultado_administrativo"].tolist() == [False, True]

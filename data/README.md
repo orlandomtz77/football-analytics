@@ -31,8 +31,8 @@ Ninguna de las dos carpetas se sube a Git. Cada dataset se documenta aquí.
   | Fuente | Proyecto | Definición |
   |---|---|---|
   | Season | temporada | Temporada de la fuente (junta Apertura + Clausura) |
-  | Date | fecha | Fecha del partido (dd/mm/aaaa); en partidos nocturnos va un día adelantada** |
-  | Time | hora_fuente | Hora de inicio; zona horaria no documentada (parece Reino Unido) |
+  | Date | fecha | Fecha del partido (dd/mm/aaaa) en hora del Reino Unido** |
+  | Time | hora_fuente | Hora de inicio en hora del Reino Unido (no documentado por la fuente; verificado)** |
   | Home / Away | equipo_local / equipo_visitante | Nombres de la fuente, en inglés y sin acentos |
   | HG / AG | goles_local / goles_visitante | Goles del partido; en liguilla, inconsistente con el tiempo extra* |
   | Res | resultado | H = gana local, D = empate, A = gana visitante |
@@ -51,9 +51,15 @@ Ninguna de las dos carpetas se sube a Git. Cada dataset se documenta aquí.
   de la fuente, 8 de las 27 finales quedan empatadas en el global, y en las demás no se puede descartar
   que el marcador incluya tiempo extra.
 
-  \*\*La fecha de la fuente parece estar en hora del Reino Unido: Apertura 2016 ida (22/12/2016 en
-  México) aparece el 23/12; Apertura 2023 vuelta (17/12/2023) aparece el 18/12; Clausura 2023 vuelta
-  (28/05/2023) aparece el 29/05.
+  \*\*Fecha y hora están en hora del Reino Unido (`Europe/London`, con horario de verano). Verificado
+  el 2026-10-30 contra la hora oficial de inicio de 8 partidos de final en Wikipedia (Apertura 2016,
+  Clausura 2019, Clausura 2023 y Apertura 2023: invierno y verano, con y sin horario de verano en México):
+  al convertir a `America/Mexico_City` coinciden los 8. Por eso los partidos de noche aparecen en la fuente
+  un día después. La app convierte al cargar (`cleaning.convertir_a_hora_mexico`; la fecha original queda
+  en `fecha_fuente`). En la noche de octubre en que el Reino Unido atrasa el reloj, la 01:00 se repite
+  (27 partidos): se toma la de horario normal, verificado con Chivas-Tigres del 28/10/2023 (19:05) y
+  Pumas-Cruz Azul del 26/10/2024 (19:00, Mediotiempo). Se muestra la hora del centro de México, también
+  para los partidos en Tijuana (hora del Pacífico).
   Las columnas de cuotas de apuestas (PSCH, B365CH, etc.) se descartan.
 
 - **Validaciones (2026-10-30):** sin nulos en goles/resultado, sin duplicados (fecha+local+visitante),
