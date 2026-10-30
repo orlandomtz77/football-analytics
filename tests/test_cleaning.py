@@ -110,3 +110,51 @@ def test_procesado_sin_metadatos_devuelve_none(ruta_csv, tmp_path):
     preparar_partidos(cargar_partidos_football_data(ruta_csv)).to_csv(salida, index=False)
     _, meta = cargar_partidos_procesados(salida)
     assert meta is None
+
+
+# --- Descarga automática (sin internet: se inyecta un descargador falso) ---
+
+def test_asegurar_datos_descarga_y_procesa_si_falta(tmp_path):
+    from football_analytics.ingest import asegurar_datos
+
+    llamadas = []
+
+    def descargador_falso(url, destino):
+        llamadas.append(url)
+        destino.write_text(CSV_PRUEBA, encoding="utf-8")
+
+    procesado = tmp_path / "processed" / "liga.csv"
+    crudos = tmp_path / "raw"
+    assert asegurar_datos(procesado, crudos, descargar=descargador_falso) is True
+    assert llamadas == ["https://www.football-data.co.uk/new/MEX.csv"]
+    assert procesado.exists()
+    assert len(list(crudos.glob("football-data_MEX_*.csv"))) == 1
+    _, meta = cargar_partidos_procesados(procesado)
+    assert meta["partidos"] == 6
+
+    # Segunda vez: ya existe, no vuelve a descargar.
+    assert asegurar_datos(procesado, crudos, descargar=descargador_falso) is False
+    assert len(llamadas) == 1
+
+
+def test_asegurar_datos_error_de_red_no_deja_archivos(tmp_path):
+    from football_analytics.ingest import asegurar_datos
+
+    def descargador_sin_red(url, destino):
+        raise OSError("sin conexión")
+
+    with pytest.raises(OSError, match="sin conexión"):
+        asegurar_datos(tmp_path / "liga.csv", tmp_path / "raw", descargar=descargador_sin_red)
+    assert list((tmp_path / "raw").iterdir()) == []
+    assert not (tmp_path / "liga.csv").exists()
+
+
+def test_asegurar_datos_rechaza_archivo_con_formato_inesperado(tmp_path):
+    from football_analytics.ingest import asegurar_datos
+
+    def descargador_html(url, destino):
+        destino.write_text("<html>Página de error</html>\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Faltan columnas"):
+        asegurar_datos(tmp_path / "liga.csv", tmp_path / "raw", descargar=descargador_html)
+    assert list((tmp_path / "raw").iterdir()) == []

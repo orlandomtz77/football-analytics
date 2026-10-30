@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import urllib.request
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 
+from football_analytics.cleaning import preparar_partidos
+
 FUENTE_NOMBRE = "football-data.co.uk"
 FUENTE_URL = "https://www.football-data.co.uk/mexico.php"
+FUENTE_CSV_URL = "https://www.football-data.co.uk/new/MEX.csv"
 
 # Columnas de la fuente -> nombres del proyecto. Las cuotas de apuestas se descartan.
 COLUMNAS_FUENTE = {
@@ -87,19 +92,58 @@ def cargar_partidos_procesados(ruta: str | Path) -> tuple[pd.DataFrame, dict | N
     return partidos, metadatos
 
 
-def main() -> None:
-    from football_analytics.cleaning import preparar_partidos
+def procesar_archivo(entrada: Path, salida: Path) -> pd.DataFrame:
+    """Carga el CSV crudo, lo limpia y guarda el procesado con sus metadatos."""
+    partidos = preparar_partidos(cargar_partidos_football_data(entrada))
+    salida.parent.mkdir(parents=True, exist_ok=True)
+    partidos.to_csv(salida, index=False)
+    metadatos = crear_metadatos(partidos, entrada)
+    ruta_metadatos(salida).write_text(json.dumps(metadatos, ensure_ascii=False, indent=2), encoding="utf-8")
+    return partidos
 
+
+def descargar_url(url: str, destino: Path, timeout: int = 30) -> None:
+    """Descarga `url` a `destino`. Lanza OSError (p. ej. URLError) si falla la red."""
+    peticion = urllib.request.Request(url, headers={"User-Agent": "football-analytics (proyecto educativo)"})
+    with urllib.request.urlopen(peticion, timeout=timeout) as respuesta:
+        destino.write_bytes(respuesta.read())
+
+
+def asegurar_datos(
+    ruta_procesado: Path,
+    carpeta_crudos: Path,
+    descargar: Callable[[str, Path], None] = descargar_url,
+) -> bool:
+    """Si no existe el CSV procesado, descarga MEX.csv una vez y lo procesa.
+
+    Devuelve True si descargó, False si los datos ya existían.
+    El crudo se guarda con la fecha de descarga en el nombre y no se modifica después.
+    Si la descarga o la validación fallan no queda ningún archivo a medias.
+    """
+    if ruta_procesado.exists():
+        return False
+
+    carpeta_crudos.mkdir(parents=True, exist_ok=True)
+    crudo = carpeta_crudos / f"football-data_MEX_{date.today().isoformat()}.csv"
+    temporal = crudo.with_suffix(".descargando")
+    try:
+        descargar(FUENTE_CSV_URL, temporal)
+        cargar_partidos_football_data(temporal)  # valida antes de aceptar el archivo
+        temporal.replace(crudo)
+    finally:
+        temporal.unlink(missing_ok=True)
+
+    procesar_archivo(crudo, ruta_procesado)
+    return True
+
+
+def main() -> None:
     parser = argparse.ArgumentParser(description="Procesa MEX.csv de football-data.co.uk.")
     parser.add_argument("entrada", type=Path, help="CSV crudo en data/raw/")
     parser.add_argument("salida", type=Path, help="CSV procesado en data/processed/")
     args = parser.parse_args()
 
-    partidos = preparar_partidos(cargar_partidos_football_data(args.entrada))
-    args.salida.parent.mkdir(parents=True, exist_ok=True)
-    partidos.to_csv(args.salida, index=False)
-    metadatos = crear_metadatos(partidos, args.entrada)
-    ruta_metadatos(args.salida).write_text(json.dumps(metadatos, ensure_ascii=False, indent=2), encoding="utf-8")
+    partidos = procesar_archivo(args.entrada, args.salida)
     print(f"{len(partidos)} partidos guardados en {args.salida}")
 
 

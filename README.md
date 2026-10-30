@@ -15,7 +15,10 @@ pip install -r requirements.txt
 
 ## Obtener y procesar los datos
 
-Los datos no están en Git. Descárgalos y procésalos (detalles en `data/README.md`):
+Los datos no están en Git. **El dashboard los descarga y procesa solo la primera vez** que se abre
+si no encuentra `data/processed/liga_mx_partidos.csv` (desactívalo con `LIGA_MX_DESCARGA=0`).
+
+Para hacerlo a mano (detalles en `data/README.md`):
 
 ```powershell
 curl.exe -L -o data/raw/football-data_MEX_2026-10-30.csv https://www.football-data.co.uk/new/MEX.csv

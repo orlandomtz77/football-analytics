@@ -62,5 +62,9 @@ $env:PYTHONPATH = "src"
 ```
 
 Agrega `torneo`, `fase` (`regular` / `final`) y `regular_completa`.
+
+Si el procesado no existe, `asegurar_datos()` (usado por el dashboard) descarga `MEX.csv` una sola vez,
+lo valida antes de aceptarlo y genera el procesado. No vuelve a descargar mientras el archivo exista;
+para actualizar los datos, borra `processed/liga_mx_partidos.csv`.
 Comprobación: la tabla de la fase regular del Apertura 2025 coincide con la de
 https://en.wikipedia.org/wiki/2025–26_Liga_MX_season (18 equipos, todas las columnas y el orden).

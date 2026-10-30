@@ -19,6 +19,7 @@
 - [x] `charts.py`: `grafico_local_visitante` (gráfico de pesas con Plotly; paleta validada para daltonismo; forma distinta por condición; nota de fuente) — implementado, probado y revisado visualmente con datos del Apertura 2025
 - [x] `dashboard/app.py` (Streamlit): selector de torneo, aviso de torneo incompleto, 4 indicadores, tabla de posiciones, gráfico local/visitante, partidos del torneo, fuente y fecha visibles — implementado, probado con AppTest (29 torneos sin errores) y revisado visualmente en escritorio (1280 px) y celular (400 px)
 - [x] Repositorio privado publicado en GitHub: https://github.com/orlandomtz77/football-analytics (verificado: visibilidad PRIVATE, 4 commits, sin archivos de datos)
+- [x] Descarga automática (`asegurar_datos` en `ingest.py`): si falta el procesado, descarga, valida y procesa una vez; sin archivos a medias si falla — implementado, probado (3 pruebas con descargador falso) y verificado de punta a punta en una copia limpia del repo (descarga real, 29 torneos sin errores)
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -39,6 +40,8 @@
 - Motivo: muestra en una sola vista ambos valores y la brecha; la forma del marcador evita depender solo del color.
 - Decisión: `app.py` solo presenta; cálculos en `metrics.py`, carga en `ingest.py`, orden de torneos en `cleaning.py`.
 - Motivo: poder probar la lógica sin la interfaz.
+- Decisión: descarga automática con `urllib` (biblioteca estándar) y una sola vez por instalación.
+- Motivo: desplegar sin subir datos a Git, sin dependencias nuevas y sin cargar de peticiones a la fuente.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -51,8 +54,8 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 27 passed (2026-10-30)
+- Resultado: 30 passed (2026-10-30)
 - Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales; revisar el gráfico con tema oscuro de Streamlit (fondo fijo claro)
 
 ## Próximo paso
-- Hacer que la app descargue y procese `MEX.csv` si no encuentra los datos (necesario para desplegar en Streamlit Community Cloud, ya que los datos no están en Git).
+- Desplegar en Streamlit Community Cloud (requiere que el usuario conecte su cuenta de GitHub en share.streamlit.io) y verificar la URL pública.

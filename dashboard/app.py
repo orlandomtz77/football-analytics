@@ -19,7 +19,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 
 from football_analytics.charts import grafico_local_visitante  # noqa: E402
 from football_analytics.cleaning import ordenar_torneos  # noqa: E402
-from football_analytics.ingest import cargar_partidos_procesados  # noqa: E402
+from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
 from football_analytics.metrics import (  # noqa: E402
     calcular_rendimiento_local_visitante,
     calcular_tabla_posiciones,
@@ -27,6 +27,9 @@ from football_analytics.metrics import (  # noqa: E402
 
 # La ruta se puede cambiar con la variable de entorno LIGA_MX_DATOS.
 RUTA_DATOS = Path(os.environ.get("LIGA_MX_DATOS", RAIZ / "data" / "processed" / "liga_mx_partidos.csv"))
+CARPETA_CRUDOS = RAIZ / "data" / "raw"
+# Si faltan los datos se descargan una vez de la fuente; LIGA_MX_DESCARGA=0 lo desactiva.
+DESCARGA_AUTOMATICA = os.environ.get("LIGA_MX_DESCARGA", "1") != "0"
 
 
 @st.cache_data
@@ -36,6 +39,20 @@ def cargar_datos(ruta: str) -> tuple[pd.DataFrame, dict | None]:
 
 st.set_page_config(page_title="Liga MX — Análisis", page_icon="⚽", layout="wide")
 st.title("Liga MX: tabla y rendimiento local vs. visitante")
+
+if DESCARGA_AUTOMATICA and not RUTA_DATOS.exists():
+    try:
+        with st.spinner("Descargando datos de football-data.co.uk (solo la primera vez)..."):
+            asegurar_datos(RUTA_DATOS, CARPETA_CRUDOS)
+    except OSError as error:
+        st.error(
+            f"No se pudieron descargar los datos: {error}.\n\n"
+            "Revisa tu conexión y recarga la página, o descárgalos manualmente (ver `README.md`)."
+        )
+        st.stop()
+    except ValueError as error:
+        st.error(f"El archivo descargado no tiene el formato esperado: {error}")
+        st.stop()
 
 try:
     partidos, metadatos = cargar_datos(str(RUTA_DATOS))

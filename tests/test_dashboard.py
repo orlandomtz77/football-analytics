@@ -48,6 +48,7 @@ def test_dashboard_muestra_indicadores(datos_procesados):
 
 def test_dashboard_sin_archivo_muestra_error_amigable(tmp_path, monkeypatch):
     monkeypatch.setenv("LIGA_MX_DATOS", str(tmp_path / "no_existe.csv"))
+    monkeypatch.setenv("LIGA_MX_DESCARGA", "0")  # sin red en las pruebas
     at = AppTest.from_file(APP, default_timeout=60).run()
     assert not at.exception
     assert "No se encontró" in at.error[0].value
