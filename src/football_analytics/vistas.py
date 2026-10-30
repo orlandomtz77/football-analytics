@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 
 from football_analytics.cleaning import ordenar_torneos
-from football_analytics.formato import ICONO_RESULTADO, forma_con_iconos, record
+from football_analytics.formato import ICONO_RESULTADO, cantidad, forma_con_iconos, record
 from football_analytics.metrics import (
     calcular_evolucion_puntos,
     calcular_tabla_posiciones,
@@ -126,6 +126,80 @@ def historial_equipo(
                                              "% puntos", "Fase final", "Completo"])
     historial.attrs["con_campeones"] = campeones is not None
     return historial
+
+
+MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+         "octubre", "noviembre", "diciembre"]
+DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+MARTES, MIERCOLES, VIERNES = 1, 2, 4
+
+
+def etiqueta_fechas(inicio: pd.Timestamp, fin: pd.Timestamp) -> str:
+    """ "24 al 26 de octubre", "31 de octubre al 2 de noviembre"; con año solo si cambia."""
+    def dia_mes(f: pd.Timestamp, con_anio: bool = False) -> str:
+        return f"{f.day} de {MESES[f.month - 1]}" + (f" de {f.year}" if con_anio else "")
+
+    if inicio.normalize() == fin.normalize():
+        return dia_mes(inicio)
+    if inicio.year != fin.year:
+        return f"{dia_mes(inicio, True)} al {dia_mes(fin, True)}"
+    if inicio.month != fin.month:
+        return f"{dia_mes(inicio)} al {dia_mes(fin)}"
+    return f"{inicio.day} al {dia_mes(fin)}"
+
+
+def semanas_de_juego(partidos: pd.DataFrame) -> pd.DataFrame:
+    """Agrupa los partidos en semanas de juego según sus fechas, de la más reciente a la más antigua.
+
+    La fuente no trae el número de jornada, así que no se habla de jornadas: una semana son días seguidos
+    con partidos. Si la semana incluye martes o miércoles (jornada a media semana), el viernes empieza otra.
+    Con esta regla, 412 de 550 semanas de fase regular 2012-2026 tienen 9 partidos (una jornada completa).
+    Un partido reprogramado aparece en la semana en que se jugó.
+    Columnas: etiqueta, inicio, fin, partidos (lista de índices de `partidos`).
+    """
+    if partidos.empty:
+        return pd.DataFrame(columns=["etiqueta", "inicio", "fin", "partidos"])
+    dias = partidos["fecha"].dt.normalize()
+    numero_por_dia: dict[pd.Timestamp, int] = {}
+    numero, dias_semana, anterior = 0, [], None
+    for dia in sorted(dias.unique()):
+        dia = pd.Timestamp(dia)
+        media_semana = any(d.weekday() in (MARTES, MIERCOLES) for d in dias_semana)
+        if anterior is not None and ((dia - anterior).days > 1 or (dia.weekday() == VIERNES and media_semana)):
+            numero, dias_semana = numero + 1, []
+        dias_semana.append(dia)
+        numero_por_dia[dia] = numero
+        anterior = dia
+    semana = dias.map(numero_por_dia)
+
+    filas = []
+    for _, grupo in partidos.groupby(semana, sort=True):
+        inicio, fin = grupo["fecha"].min(), grupo["fecha"].max()
+        rango = etiqueta_fechas(inicio, fin)
+        if inicio.normalize() != fin.normalize():
+            rango = "Del " + rango
+        filas.append({
+            "etiqueta": f"{rango} ({cantidad(len(grupo), 'partido', 'partidos')})",
+            "inicio": inicio,
+            "fin": fin,
+            "partidos": grupo.sort_values("fecha").index.tolist(),
+        })
+    return pd.DataFrame(filas).iloc[::-1].reset_index(drop=True)
+
+
+def tabla_partidos(partidos: pd.DataFrame) -> pd.DataFrame:
+    """Partidos listos para mostrar: cuándo (día y hora del centro de México), local, marcador, visitante y fase.
+
+    Sin año y con día y hora juntos para que el partido completo quepa en un celular.
+    """
+    ordenados = partidos.sort_values("fecha")
+    return pd.DataFrame({
+        "Cuándo": ordenados["fecha"].map(lambda f: f"{DIAS[f.weekday()]} {f:%d/%m %H:%M}"),
+        "Local": ordenados["equipo_local"],
+        "Marcador": ordenados["goles_local"].astype(str) + "-" + ordenados["goles_visitante"].astype(str),
+        "Visitante": ordenados["equipo_visitante"],
+        "Fase": ordenados["fase"].map({"regular": "Regular", "final": "Liguilla / fase final"}),
+    }).reset_index(drop=True)
 
 
 # Clásicos de Liga MX con los nombres que usa la fuente.

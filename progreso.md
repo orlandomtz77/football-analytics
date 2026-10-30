@@ -30,6 +30,7 @@
 - [x] Campeones (2026-10-30): `data/reference/campeones_liga_mx.csv` (Wikipedia, 27 torneos) y `campeones.py`; validados contra las finales de los datos (27 de 27) y contra Wikipedia en español (17 torneos). Titular "X, campeón del torneo" con cómo se definió la final; historial con "🏆 Campeón"/"Subcampeón", conteo de títulos y trofeos en la gráfica — implementado, probado y revisado visualmente
 - [x] Resultados administrativos (2026-10-30): `data/reference/resultados_administrativos.csv` y `correcciones.py`; Clausura 2021 Atlas-América corregido a 3-0; la tabla coincide con Wikipedia — implementado y probado
 - [x] Hora de México (2026-10-30): la fuente usa hora del Reino Unido (verificado con 8 partidos de final y 2 de la noche del cambio de horario); `convertir_a_hora_mexico` en `cleaning.py` se aplica al cargar; la pestaña Partidos muestra fecha y hora del centro — implementado, probado y revisado con datos reales
+- [x] Partidos por semana de juego (2026-10-30): `semanas_de_juego`, `etiqueta_fechas` y `tabla_partidos` en `vistas.py`; la pestaña Partidos muestra la semana elegida (por defecto la más reciente) con día y hora, y todos los partidos en un desplegable — implementado, probado y revisado en celular (400 px)
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -78,6 +79,8 @@
 - Motivo: verificado contra Wikipedia (2026-10-30) que la fuente no registra penales y a veces guarda el marcador a 90 minutos (Apertura 2016 y 2023) y a veces el de tiempo extra (Clausura 2023).
 - Decisión: campeones y resultados administrativos desde Wikipedia, en tablas pequeñas versionadas en `data/reference/`.
 - Motivo: la fuente principal no los registra; son pocos datos factuales, con fuente citada y validados contra los partidos.
+- Decisión: agrupar partidos por "semana de juego" (días seguidos; el viernes empieza otra semana si hubo partidos martes o miércoles), sin llamarles jornadas.
+- Motivo: la fuente no trae la jornada; con esta regla 412 de 550 semanas de fase regular tienen 9 partidos, pero los reprogramados y algunas jornadas de jueves a martes no cuadran con la jornada oficial.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -90,8 +93,8 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 85 passed (2026-10-30)
+- Resultado: 91 passed (2026-10-30)
 - Pendientes: ninguno conocido
 
 ## Próximo paso
-- Por decidir con el usuario. Ideas: buscar otros resultados administrativos comparando las tablas completas con Wikipedia; o agregar una vista por jornada con los partidos de la semana.
+- Por decidir con el usuario. Idea: buscar otros resultados administrativos comparando las tablas completas de cada torneo con Wikipedia.

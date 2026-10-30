@@ -50,7 +50,9 @@ from football_analytics.vistas import (  # noqa: E402
     historial_equipo,
     resumen_enfrentamientos,
     tabla_aficionado,
+    semanas_de_juego,
     tabla_enfrentamientos,
+    tabla_partidos,
 )
 
 # La ruta se puede cambiar con la variable de entorno LIGA_MX_DATOS.
@@ -328,16 +330,17 @@ with pestana_cara:
 
 # --- Partidos del torneo ---
 with pestana_partidos:
-    st.caption(f"{len(del_torneo)} partidos del {torneo}, fase regular y fase final.")
-    vista = pd.DataFrame({
-        "Fecha": del_torneo["fecha"].dt.strftime("%d/%m/%Y"),
-        "Hora": del_torneo["hora"],
-        "Fase": del_torneo["fase"].map({"regular": "Regular", "final": "Liguilla / fase final"}),
-        "Local": del_torneo["equipo_local"],
-        "Marcador": del_torneo["goles_local"].astype(str) + "-" + del_torneo["goles_visitante"].astype(str),
-        "Visitante": del_torneo["equipo_visitante"],
-    })
-    st.dataframe(vista, hide_index=True, width="stretch")
+    # Por semana de juego: la fuente no trae el número de jornada.
+    semanas = semanas_de_juego(del_torneo)
+    eleccion_semana = st.selectbox("Semana", semanas["etiqueta"].tolist(), index=0)
+    de_la_semana = del_torneo.loc[semanas.set_index("etiqueta").at[eleccion_semana, "partidos"]]
+    st.dataframe(tabla_partidos(de_la_semana), hide_index=True, width="stretch")
+    st.caption(
+        "La fuente no indica la jornada: se agrupan los partidos jugados en las mismas fechas. "
+        "Un partido reprogramado aparece en la semana en que se jugó."
+    )
+    with st.expander(f"Todos los partidos del {torneo} ({len(del_torneo)})"):
+        st.dataframe(tabla_partidos(del_torneo), hide_index=True, width="stretch")
     administrativos = del_torneo[del_torneo["resultado_administrativo"]]
     if not administrativos.empty:
         lista = "; ".join(
