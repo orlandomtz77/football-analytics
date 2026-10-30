@@ -1,4 +1,4 @@
-"""Dashboard de Liga MX para aficionados: datos del torneo, tabla y ficha de equipo.
+"""Dashboard de Liga MX para aficionados: titular del torneo, tabla, ficha de equipo y cara a cara.
 
 Ejecutar desde la raíz del proyecto:
     streamlit run dashboard/app.py
@@ -27,7 +27,12 @@ from football_analytics.charts import grafico_evolucion_puntos, grafico_historia
 from football_analytics.cleaning import ordenar_torneos  # noqa: E402
 from football_analytics.formato import cantidad  # noqa: E402
 from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
-from football_analytics.insights import datos_cara_a_cara, datos_destacados, datos_historial  # noqa: E402
+from football_analytics.insights import (  # noqa: E402
+    datos_cara_a_cara,
+    datos_destacados,
+    datos_historial,
+    titular_torneo,
+)
 from football_analytics.metrics import calcular_evolucion_puntos  # noqa: E402
 from football_analytics.reglamento import zonas_del_torneo  # noqa: E402
 from football_analytics.vistas import (  # noqa: E402
@@ -53,8 +58,14 @@ def cargar_datos(ruta: str) -> tuple[pd.DataFrame, dict | None]:
     return cargar_partidos_procesados(ruta)
 
 
+def mostrar_indicadores(indicadores: list[tuple[str, object, str | None]]) -> None:
+    """Indicadores en una fila que se acomoda sola: en celular pasan a la siguiente línea según quepan."""
+    fila = st.container(horizontal=True, gap="large")
+    for etiqueta, valor, ayuda in indicadores:
+        fila.metric(etiqueta, valor, help=ayuda, width="content")
+
+
 st.set_page_config(page_title="Liga MX — Análisis", page_icon="⚽", layout="wide")
-st.title("⚽ Liga MX")
 
 if DESCARGA_AUTOMATICA and not RUTA_DATOS.exists():
     try:
@@ -80,18 +91,11 @@ except FileNotFoundError:
     )
     st.stop()
 
-if metadatos:
-    st.caption(
-        f"Fuente: [{metadatos['fuente']}]({metadatos['url']}) · "
-        f"datos obtenidos el {metadatos['fecha_obtencion']} · "
-        f"partidos del {metadatos['fecha_min']} al {metadatos['fecha_max']}"
-    )
-else:
-    st.caption("Fuente: football-data.co.uk · sin metadatos de fecha (vuelve a ejecutar `ingest`).")
-
-# --- Filtros ---
+# --- Encabezado: torneo, titular e indicadores ---
 torneos = ordenar_torneos(partidos["torneo"])
-torneo = st.selectbox("Torneo", torneos, index=0)
+col_marca, col_torneo = st.columns([3, 1], vertical_alignment="bottom")
+col_marca.markdown("#### ⚽ Liga MX")
+torneo = col_torneo.selectbox("Torneo", torneos, index=0)
 
 del_torneo = partidos[partidos["torneo"] == torneo]
 regular = del_torneo[del_torneo["fase"] == "regular"]
@@ -100,31 +104,50 @@ if regular.empty:
     st.info(f"No hay partidos de fase regular registrados para {torneo}.")
     st.stop()
 
-if not del_torneo["regular_completa"].iloc[0]:
-    st.warning(
-        f"La fase regular de {torneo} está incompleta en los datos "
-        f"({len(regular)} partidos). Puede estar en curso o haberse suspendido "
-        "(Clausura 2020 se canceló por COVID-19). La tabla refleja solo lo jugado."
-    )
+if del_torneo["regular_completa"].iloc[0]:
+    estado = "terminado"
+elif torneo == torneos[0]:
+    estado = "en_curso"
+else:
+    estado = "cancelado"  # en los datos solo ocurre en Clausura 2020 (COVID-19)
 
-# --- Indicadores del torneo ---
+# El titular es lo primero que se lee, como la portada de un diario deportivo.
+titular, bajada = titular_torneo(regular, torneo, estado)
+st.title(titular)
+st.markdown(bajada)
+
+if estado == "en_curso":
+    st.caption(
+        f"El {torneo} sigue en juego: la tabla refleja los {len(regular)} partidos jugados "
+        f"hasta el {regular['fecha'].max():%d/%m/%Y}."
+    )
+elif estado == "cancelado":
+    st.warning(f"El {torneo} se canceló antes de terminar la fase regular ({len(regular)} partidos jugados).")
+
 goles_por_partido = (regular["goles_local"] + regular["goles_visitante"]).mean()
 pct_local = (regular["resultado"] == "H").mean() * 100
 pct_empate = (regular["resultado"] == "D").mean() * 100
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Partidos jugados", len(regular), help="Fase regular.")
-col2.metric("Goles por partido", f"{goles_por_partido:.1f}")
-col3.metric("Ganó el local", f"{pct_local:.0f} %", help="Porcentaje de partidos que ganó el equipo de casa.")
-col4.metric("Empates", f"{pct_empate:.0f} %")
+mostrar_indicadores([
+    ("Partidos jugados", len(regular), "Fase regular."),
+    ("Goles por partido", f"{goles_por_partido:.1f}", None),
+    ("Ganó el local", f"{pct_local:.0f} %", "Porcentaje de partidos que ganó el equipo de casa."),
+    ("Empates", f"{pct_empate:.0f} %", None),
+])
 
-# --- Datos del torneo ---
-st.subheader("📰 Datos del torneo")
-for frase in datos_destacados(regular):
-    st.markdown(f"- {frase}")
+if metadatos:
+    st.caption(
+        f"Fuente: [{metadatos['fuente']}]({metadatos['url']}), datos obtenidos el {metadatos['fecha_obtencion']} "
+        f"con partidos del {metadatos['fecha_min']} al {metadatos['fecha_max']}."
+    )
+else:
+    st.caption("Fuente: football-data.co.uk, sin metadatos de fecha (vuelve a ejecutar `ingest`).")
+
+pestana_tabla, pestana_destacado, pestana_equipo, pestana_cara, pestana_partidos = st.tabs(
+    ["Tabla", "Lo destacado", "Mi equipo", "Cara a cara", "Partidos"]
+)
 
 # --- Tabla ---
-st.subheader("🏆 Tabla general")
 # Semitransparentes: se ven bien sobre fondo claro y oscuro, y el texto conserva el color del tema.
 FONDO_ZONA = {
     "Liguilla": "rgba(34, 160, 80, 0.18)", "Cuartos de final": "rgba(34, 160, 80, 0.18)",
@@ -151,127 +174,135 @@ def mostrar_tabla(vista: pd.DataFrame) -> None:
     )
 
 
-pestana_general, pestana_local, pestana_visita = st.tabs(["General", "🏠 Local", "✈️ Visitante"])
-with pestana_general:
-    general = tabla_aficionado(regular, torneo)
-    mostrar_tabla(general)
-    zonas = zonas_del_torneo(torneo)
-    if zonas:
-        texto_zonas = " · ".join(f"{nombre}: {desde}.º a {hasta}.º" for nombre, desde, hasta in zonas)
-        st.caption(
-            f"**Clasificación ({torneo}):** {texto_zonas}. Zonas según la posición en la tabla; "
-            "no considera excepciones del reglamento (por ejemplo, la tabla de cociente)."
-        )
-    else:
-        st.caption(f"{torneo} no tuvo fase final (se canceló por COVID-19).")
-with pestana_local:
-    st.caption("Solo partidos en casa.")
-    mostrar_tabla(tabla_aficionado(regular, torneo, condicion="local"))
-with pestana_visita:
-    st.caption("Solo partidos de visita.")
-    mostrar_tabla(tabla_aficionado(regular, torneo, condicion="visitante"))
-st.caption(
-    "JJ: jugados · JG/JE/JP: ganados, empatados, perdidos · GF/GC: goles a favor/en contra · DIF: diferencia · "
-    "Últimos 5: ✅ ganó · ➖ empató · ❌ perdió (del más antiguo al más reciente). "
-    "Empates en puntos ordenados por DIF y GF (el reglamento oficial puede usar otros criterios)."
-)
-
-# --- Ficha de equipo ---
-st.subheader("📋 Ficha de equipo")
-equipo = st.selectbox("Equipo", general["Equipo"].tolist(), index=0)
-ficha = ficha_equipo(regular, equipo)
-
-diferencia = ficha["puntos_del_lider"] - ficha["puntos"]
-if ficha["posicion"] == 1:
-    texto_lider = "Es el líder"
-else:
-    texto_lider = f"A {cantidad(diferencia, 'punto', 'puntos')}"
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Posición", f"{ficha['posicion']}.º de {ficha['equipos']}")
-col2.metric("Puntos", ficha["puntos"])
-col3.metric("Del líder", texto_lider, help=f"Líder: {ficha['lider']} con {ficha['puntos_del_lider']} puntos.")
-col4.metric("Récord", ficha["record"], help="Ganados-Empatados-Perdidos.")
-
-st.markdown(f"**Últimos 5:** {ficha['ultimos_5']}")
-st.markdown(f"🏠 **En casa:** {ficha['record_local']} · ✈️ **De visita:** {ficha['record_visita']}")
-st.markdown(
-    f"🔥 **Mejor racha:** {cantidad(ficha['racha_victorias'], 'victoria seguida', 'victorias seguidas')} · "
-    f"{cantidad(ficha['racha_sin_perder'], 'partido', 'partidos')} sin perder"
-)
-
-st.markdown("**Resultados**")
-calendario = calendario_equipo(regular, equipo)
-st.dataframe(calendario, hide_index=True, width="stretch", height=35 * (len(calendario) + 1) + 3)
-
-with st.expander("Ver gráfica de puntos acumulados"):
-    lider = ficha["lider"]
-    referencia = lider if equipo != lider else (general["Equipo"].iloc[1] if len(general) > 1 else None)
-    fig = grafico_evolucion_puntos(
-        calcular_evolucion_puntos(regular),
-        equipo,
-        referencia=referencia,
-        titulo=f"Puntos acumulados: {equipo}" + (f" vs. {referencia}" if referencia else ""),
-        nota="Cada punto es un partido del equipo, en orden de fecha (la fuente no indica la jornada oficial).",
+with pestana_tabla:
+    pestana_general, pestana_local, pestana_visita = st.tabs(["General", "🏠 Local", "✈️ Visitante"])
+    with pestana_general:
+        general = tabla_aficionado(regular, torneo)
+        mostrar_tabla(general)
+        zonas = zonas_del_torneo(torneo)
+        if zonas:
+            texto_zonas = "; ".join(f"{nombre} del {desde}.º al {hasta}.º" for nombre, desde, hasta in zonas)
+            st.caption(
+                f"**Clasificación en el {torneo}:** {texto_zonas}. Zonas según la posición en la tabla; "
+                "no considera excepciones del reglamento (por ejemplo, la tabla de cociente)."
+            )
+        else:
+            st.caption(f"El {torneo} no tuvo fase final (se canceló por COVID-19).")
+    with pestana_local:
+        st.caption("Solo partidos en casa.")
+        mostrar_tabla(tabla_aficionado(regular, torneo, condicion="local"))
+    with pestana_visita:
+        st.caption("Solo partidos de visita.")
+        mostrar_tabla(tabla_aficionado(regular, torneo, condicion="visitante"))
+    st.caption(
+        "JJ: jugados. JG/JE/JP: ganados, empatados, perdidos. GF/GC: goles a favor y en contra. DIF: diferencia. "
+        "Últimos 5: ✅ ganó, ➖ empató, ❌ perdió (del más antiguo al más reciente). "
+        "Los empates en puntos se ordenan por DIF y GF; el reglamento oficial puede usar otros criterios."
     )
-    # El tema de Streamlit pone fondo y textos (claro u oscuro); las series conservan sus colores validados.
-    st.plotly_chart(fig, theme="streamlit", width="stretch")
 
-# --- Historial del equipo ---
-st.subheader(f"📚 Historial de {equipo}")
-historial = historial_equipo(partidos, equipo)
-for frase in datos_historial(historial, equipo):
-    st.markdown(f"- {frase}")
-st.caption(
-    "Mejor/peor torneo y promedios usan el % de puntos obtenidos y solo torneos terminados. "
-    "El nombre del equipo es el de la fuente: si un club cambió de nombre o de sede, aparece por separado."
-)
-st.plotly_chart(grafico_historial_puntos(historial, equipo), theme="streamlit", width="stretch")
-st.caption("Barras grises: torneo en curso o cancelado.")
+# --- Lo destacado ---
+with pestana_destacado:
+    for frase in datos_destacados(regular):
+        st.markdown(f"- {frase}")
 
-with st.expander("Ver tabla del historial"):
-    tabla_historial = historial.assign(
-        Torneo=historial["Torneo"] + historial["Completo"].map({True: "", False: " (incompleto)"}),
-        Pos=historial["Pos"].astype(str) + ".º de " + historial["Equipos"].astype(str),
-    ).drop(columns=["Equipos", "Completo"])
-    st.dataframe(tabla_historial, hide_index=True, width="stretch")
+# --- Mi equipo: ficha e historial ---
+with pestana_equipo:
+    equipo = st.selectbox("Equipo", general["Equipo"].tolist(), index=0)
+    ficha = ficha_equipo(regular, equipo)
+
+    diferencia = ficha["puntos_del_lider"] - ficha["puntos"]
+    if ficha["posicion"] == 1:
+        texto_lider = "Es el líder"
+    else:
+        texto_lider = f"A {cantidad(diferencia, 'punto', 'puntos')}"
+
+    mostrar_indicadores([
+        ("Posición", f"{ficha['posicion']}.º de {ficha['equipos']}", None),
+        ("Puntos", ficha["puntos"], None),
+        ("Del líder", texto_lider, f"Líder: {ficha['lider']} con {ficha['puntos_del_lider']} puntos."),
+        ("Récord", ficha["record"], "Ganados-Empatados-Perdidos."),
+    ])
+
+    st.markdown(f"**Últimos 5:** {ficha['ultimos_5']}")
+    st.markdown(f"🏠 **En casa:** {ficha['record_local']}. ✈️ **De visita:** {ficha['record_visita']}.")
+    st.markdown(
+        f"🔥 **Mejor racha:** {cantidad(ficha['racha_victorias'], 'victoria seguida', 'victorias seguidas')} y "
+        f"{cantidad(ficha['racha_sin_perder'], 'partido', 'partidos')} sin perder."
+    )
+
+    st.subheader(f"Resultados de {equipo}")
+    calendario = calendario_equipo(regular, equipo)
+    st.dataframe(calendario, hide_index=True, width="stretch", height=35 * (len(calendario) + 1) + 3)
+
+    with st.expander("Ver gráfica de puntos acumulados"):
+        lider = ficha["lider"]
+        referencia = lider if equipo != lider else (general["Equipo"].iloc[1] if len(general) > 1 else None)
+        fig = grafico_evolucion_puntos(
+            calcular_evolucion_puntos(regular),
+            equipo,
+            referencia=referencia,
+            titulo=f"Puntos acumulados: {equipo}" + (f" vs. {referencia}" if referencia else ""),
+            nota="Cada punto es un partido del equipo, en orden de fecha (la fuente no indica la jornada oficial).",
+        )
+        # El tema de Streamlit pone fondo y textos (claro u oscuro); las series conservan sus colores validados.
+        st.plotly_chart(fig, theme="streamlit", width="stretch")
+
+    st.subheader(f"Historial de {equipo}")
+    historial = historial_equipo(partidos, equipo)
+    for frase in datos_historial(historial, equipo):
+        st.markdown(f"- {frase}")
+    st.caption(
+        "Mejor y peor torneo y promedios usan el % de puntos obtenidos y solo torneos terminados. "
+        "El nombre del equipo es el de la fuente: si un club cambió de nombre o de sede, aparece por separado."
+    )
+    st.plotly_chart(grafico_historial_puntos(historial, equipo), theme="streamlit", width="stretch")
+    st.caption("Barras grises: torneo en curso o cancelado.")
+
+    with st.expander("Ver tabla del historial"):
+        tabla_historial = historial.assign(
+            Torneo=historial["Torneo"] + historial["Completo"].map({True: "", False: " (incompleto)"}),
+            Pos=historial["Pos"].astype(str) + ".º de " + historial["Equipos"].astype(str),
+        ).drop(columns=["Equipos", "Completo"])
+        st.dataframe(tabla_historial, hide_index=True, width="stretch")
 
 # --- Cara a cara ---
-st.subheader("⚔️ Cara a cara")
-OTRO = "Elegir dos equipos…"
-opciones = [f"{nombre}: {a} vs. {b}" for nombre, (a, b) in CLASICOS.items()] + [OTRO]
-eleccion = st.selectbox("Enfrentamiento", opciones, index=0)
-if eleccion == OTRO:
-    todos = sorted(set(partidos["equipo_local"]) | set(partidos["equipo_visitante"]))
-    col1, col2 = st.columns(2)
-    equipo_a = col1.selectbox("Equipo", todos, index=todos.index(equipo) if equipo in todos else 0)
-    rivales = [e for e in todos if e != equipo_a]
-    equipo_b = col2.selectbox("Rival", rivales, index=0)
-else:
-    equipo_a, equipo_b = CLASICOS[eleccion.split(":")[0]]
+with pestana_cara:
+    OTRO = "Elegir dos equipos…"
+    opciones = [f"{nombre}: {a} vs. {b}" for nombre, (a, b) in CLASICOS.items()] + [OTRO]
+    eleccion = st.selectbox("Enfrentamiento", opciones, index=0)
+    if eleccion == OTRO:
+        todos = sorted(set(partidos["equipo_local"]) | set(partidos["equipo_visitante"]))
+        col1, col2 = st.columns(2)
+        equipo_a = col1.selectbox("Equipo", todos, index=todos.index(equipo) if equipo in todos else 0)
+        rivales = [e for e in todos if e != equipo_a]
+        equipo_b = col2.selectbox("Rival", rivales, index=0)
+    else:
+        equipo_a, equipo_b = CLASICOS[eleccion.split(":")[0]]
 
-cara = enfrentamientos(partidos, equipo_a, equipo_b)
-resumen = resumen_enfrentamientos(cara)
-if resumen["partidos"] == 0:
-    st.info(f"{equipo_a} y {equipo_b} no se enfrentaron en Liga MX entre los datos disponibles (desde 2012).")
-else:
-    col1, col2, col3 = st.columns(3)
-    col1.metric(f"Ganó {equipo_a}", resumen["victorias"])
-    col2.metric("Empates", resumen["empates"])
-    col3.metric(f"Ganó {equipo_b}", resumen["derrotas"])
-    for frase in datos_cara_a_cara(resumen, equipo_a, equipo_b):
-        st.markdown(f"- {frase}")
-    st.markdown(f"**Últimos 5 de {equipo_a}:** {resumen['ultimos_5']}")
-    with st.expander(f"Ver los {resumen['partidos']} partidos"):
-        st.dataframe(tabla_enfrentamientos(cara), hide_index=True, width="stretch")
-    st.caption(
-        "Solo partidos de Liga MX desde el Apertura 2012, fase regular y liguilla (no incluye Copa MX, "
-        "Concacaf ni amistosos). Cada partido cuenta por su marcador: en liguilla, la serie pudo definirse "
-        "por global o penales."
-    )
+    cara = enfrentamientos(partidos, equipo_a, equipo_b)
+    resumen = resumen_enfrentamientos(cara)
+    if resumen["partidos"] == 0:
+        st.info(f"{equipo_a} y {equipo_b} no se enfrentaron en Liga MX entre los datos disponibles (desde 2012).")
+    else:
+        mostrar_indicadores([
+            (f"Ganó {equipo_a}", resumen["victorias"], None),
+            ("Empates", resumen["empates"], None),
+            (f"Ganó {equipo_b}", resumen["derrotas"], None),
+        ])
+        for frase in datos_cara_a_cara(resumen, equipo_a, equipo_b):
+            st.markdown(f"- {frase}")
+        st.markdown(f"**Últimos 5 de {equipo_a}:** {resumen['ultimos_5']}")
+        with st.expander(f"Ver los {resumen['partidos']} partidos"):
+            st.dataframe(tabla_enfrentamientos(cara), hide_index=True, width="stretch")
+        st.caption(
+            "Solo partidos de Liga MX desde el Apertura 2012, fase regular y liguilla (no incluye Copa MX, "
+            "Concacaf ni amistosos). Cada partido cuenta por su marcador: en liguilla, la serie pudo definirse "
+            "por global o penales."
+        )
 
 # --- Partidos del torneo ---
-with st.expander(f"Todos los partidos de {torneo} ({len(del_torneo)})"):
+with pestana_partidos:
+    st.caption(f"{len(del_torneo)} partidos del {torneo}, fase regular y fase final.")
     vista = pd.DataFrame({
         "Fecha": del_torneo["fecha"].dt.strftime("%d/%m/%Y"),
         "Fase": del_torneo["fase"].map({"regular": "Regular", "final": "Liguilla / fase final"}),

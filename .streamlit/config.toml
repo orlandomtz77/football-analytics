@@ -1,0 +1,29 @@
+# Tema visual del dashboard (Streamlit lo lee desde la raíz del repositorio, también en Streamlit Cloud).
+# Tipografía: Barlow Condensed para titulares (estilo prensa deportiva/marcador) y Barlow para texto.
+# Ambas de Google Fonts con licencia SIL Open Font License.
+# Colores validados (contraste y daltonismo) junto con la paleta de las gráficas en charts.py.
+
+[theme]
+font = "Barlow:https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap, sans-serif"
+headingFont = "Barlow Condensed:https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap, sans-serif"
+headingFontSizes = ["3rem", "2rem", "1.5rem", "1.25rem"]
+headingFontWeights = [700, 700, 600, 600]
+metricValueFontSize = "2.25rem"
+metricValueFontWeight = 600
+baseRadius = "0.375rem"
+
+[theme.light]
+primaryColor = "#2a78d6"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#eef3ef"
+borderColor = "#d6dfd9"
+dataframeHeaderBackgroundColor = "#eef3ef"
+
+# Oscuro: verde noche, como una cancha iluminada.
+[theme.dark]
+primaryColor = "#3987e5"
+backgroundColor = "#0b1310"
+secondaryBackgroundColor = "#15201b"
+textColor = "#e6ece8"
+borderColor = "#24332c"
+dataframeHeaderBackgroundColor = "#15201b"

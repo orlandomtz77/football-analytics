@@ -59,6 +59,53 @@ def datos_destacados(partidos: pd.DataFrame) -> list[str]:
     return [f for f in frases if f]
 
 
+def _criterio_desempate(primero: pd.Series, segundo: pd.Series) -> str:
+    """Por qué `primero` va arriba de `segundo` con los mismos puntos (desempate provisional de la tabla)."""
+    if primero["DG"] != segundo["DG"]:
+        return "diferencia de goles"
+    if primero["GF"] != segundo["GF"]:
+        return "goles a favor"
+    return "orden alfabético"
+
+
+def titular_torneo(partidos: pd.DataFrame, torneo: str, estado: str) -> tuple[str, str]:
+    """Titular y bajada sobre el líder de la fase regular, como en la portada de un diario deportivo.
+
+    `estado`: "terminado", "en_curso" o "cancelado". No dice "campeón": el título se define en la liguilla.
+    """
+    titulares = {
+        "terminado": "{lider} terminó primero en la fase regular del {torneo}",
+        "en_curso": "{lider} lidera el {torneo}",
+        "cancelado": "{lider} iba primero cuando se canceló el {torneo}",
+    }
+    if estado not in titulares:
+        raise ValueError(f"Estado desconocido: {estado!r}. Usa uno de {sorted(titulares)}.")
+
+    tabla = calcular_tabla_posiciones(partidos).set_index("equipo")
+    lider = tabla.index[0]
+    primero = tabla.iloc[0]
+    titular = titulares[estado].format(lider=lider, torneo=torneo)
+
+    en_curso = estado == "en_curso"
+    bajada = (
+        f"{'Suma ' if en_curso else ''}{cantidad(primero['Pts'], 'punto', 'puntos')} en "
+        f"{cantidad(primero['PJ'], 'partido', 'partidos')}"
+    )
+    if len(tabla) > 1:
+        segundo = tabla.iloc[1]
+        ventaja = primero["Pts"] - segundo["Pts"]
+        if ventaja > 0:
+            bajada += f", {ventaja} más que {tabla.index[1]}"
+        else:
+            verbos = ("empata", "va") if en_curso else ("empató", "quedó")
+            bajada += (
+                f"; {verbos[0]} en puntos con {tabla.index[1]} y {verbos[1]} arriba por "
+                f"{_criterio_desempate(primero, segundo)}"
+            )
+    bajada = bajada[0].upper() + bajada[1:] + "."
+    return titular, bajada
+
+
 def datos_historial(historial: pd.DataFrame, equipo: str) -> list[str]:
     """Frases sobre el historial de un equipo (salida de `vistas.historial_equipo`).
 

@@ -102,3 +102,12 @@ def test_dashboard_cara_a_cara(datos_procesados):
     assert indicadores["Ganó Equipo A"] == "1"
     assert indicadores["Empates"] == "1"
     assert indicadores["Ganó Equipo B"] == "1"
+
+
+def test_dashboard_titular_del_torneo(datos_procesados):
+    at = AppTest.from_file(APP, default_timeout=60).run()
+    at.selectbox[0].set_value("Apertura 2025").run()
+    # Tabla Apertura 2025 de prueba: A 6 pts, B 1 (DIF -2), C 1 (DIF -3).
+    assert at.title[0].value.startswith("Equipo A ")
+    assert "Apertura 2025" in at.title[0].value
+    assert any("5 más que Equipo B" in m.value for m in at.markdown)

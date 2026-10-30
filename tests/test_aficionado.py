@@ -269,3 +269,44 @@ def test_clasicos_usan_nombres_de_la_fuente():
 
     nombres_fuente = {"Club America", "Guadalajara Chivas", "Tigres UANL", "Monterrey", "UNAM Pumas", "Cruz Azul"}
     assert {e for par in CLASICOS.values() for e in par} == nombres_fuente
+
+
+# --- Titular del torneo ---
+
+def test_titular_torneo_terminado_en_curso_y_cancelado():
+    from football_analytics.insights import titular_torneo
+
+    titular, bajada = titular_torneo(PARTIDOS, "Apertura 2025", "terminado")
+    assert titular == "Equipo A terminó primero en la fase regular del Apertura 2025"
+    assert bajada == "6 puntos en 2 partidos, 5 más que Equipo B."
+
+    titular, bajada = titular_torneo(PARTIDOS, "Apertura 2026", "en_curso")
+    assert titular == "Equipo A lidera el Apertura 2026"
+    assert bajada == "Suma 6 puntos en 2 partidos, 5 más que Equipo B."
+
+    titular, _ = titular_torneo(PARTIDOS, "Clausura 2020", "cancelado")
+    assert titular == "Equipo A iba primero cuando se canceló el Clausura 2020"
+
+
+def test_titular_con_empate_en_puntos_explica_el_desempate():
+    from football_analytics.insights import titular_torneo
+
+    # B y C empatan a 1 punto; B va arriba por diferencia de goles (-2 contra -3).
+    sin_a = PARTIDOS[PARTIDOS["equipo_local"] == "Equipo B"]  # solo B 1-1 C: mismo DG y GF
+    _, bajada = titular_torneo(sin_a, "Apertura 2025", "terminado")
+    assert bajada == "1 punto en 1 partido; empató en puntos con Equipo C y quedó arriba por orden alfabético."
+
+    dos_partidos = pd.DataFrame({
+        "fecha": pd.to_datetime(["2025-07-01", "2025-07-08"]),
+        "equipo_local": ["Equipo B", "Equipo C"], "equipo_visitante": ["Equipo D", "Equipo E"],
+        "goles_local": [3, 1], "goles_visitante": [0, 0],
+    })
+    _, bajada = titular_torneo(dos_partidos, "Apertura 2026", "en_curso")
+    assert bajada == "Suma 3 puntos en 1 partido; empata en puntos con Equipo C y va arriba por diferencia de goles."
+
+
+def test_titular_estado_invalido():
+    from football_analytics.insights import titular_torneo
+
+    with pytest.raises(ValueError):
+        titular_torneo(PARTIDOS, "Apertura 2025", "otro")

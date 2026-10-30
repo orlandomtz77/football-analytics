@@ -26,6 +26,7 @@
 - [x] Historial del equipo (2026-10-30): `historial_equipo` en `vistas.py`, `datos_historial` en `insights.py` (mejor/peor torneo, fase final, Apertura vs. Clausura con % de puntos y solo torneos terminados), `grafico_historial_puntos` en `charts.py` — implementado, probado (57 pruebas) y revisado en escritorio y celular
 - [x] Cara a cara (2026-10-30): `enfrentamientos`, `resumen_enfrentamientos` y `CLASICOS` en `vistas.py`, `datos_cara_a_cara` en `insights.py`; sección en el dashboard con los 4 clásicos o dos equipos a elegir — implementado, probado (62 pruebas, simetría A/B verificada en los 4 clásicos) y revisado visualmente
 - [x] Tema oscuro (2026-10-30): las gráficas usan `theme="streamlit"` y solo fijan los colores de las series (azul `#2a78d6`, naranja `#d95926`, gris `#8a8984`, validados contra los fondos claro `#ffffff` y oscuro `#0e1117`); las zonas de la tabla usan fondos semitransparentes sin color de texto fijo — implementado, probado (63 pruebas) y revisado visualmente en ambos temas, incluido el cambio de tema desde el menú sin recargar
+- [x] Rediseño visual (2026-10-30): tema propio en `.streamlit/config.toml` (Barlow Condensed para titulares, Barlow para texto; acento azul de las gráficas; modo oscuro verde noche `#0b1310`), titular calculado con datos (`titular_torneo` en `insights.py`: terminado, en curso o cancelado; explica el desempate si hay empate en puntos), pestañas Tabla, Lo destacado, Mi equipo, Cara a cara y Partidos, e indicadores en filas que se acomodan en celular — implementado, probado (67 pruebas) y revisado en escritorio (1280 px) y celular (400 px), modo claro y oscuro
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -66,6 +67,10 @@
 - Motivo: así se cuentan los clásicos; las series de liguilla definidas por global o penales no se modelan (la fuente no lo indica).
 - Decisión: el fondo, los textos y la rejilla de las gráficas los pone el tema de Streamlit (`theme="streamlit"`), no el código.
 - Motivo: al cambiar de tema en el menú, Streamlit no vuelve a ejecutar la app; si el código elige los colores (p. ej. con `st.context.theme`), las gráficas quedan con el tema anterior hasta la siguiente interacción (comprobado). El tema de Streamlit se aplica en el navegador y cambia al instante.
+- Decisión: identidad visual de prensa deportiva: titular condensado calculado con los datos como elemento principal; el resto sobrio.
+- Motivo: público aficionado; el titular dice en una línea lo que más le importa (quién va primero) sin inventar nada (no dice "campeón": la fuente no permite saberlo).
+- Decisión: fuentes de Google Fonts cargadas por URL desde el tema de Streamlit.
+- Motivo: no hay que subir archivos de fuentes al repo; si Google Fonts no carga, el tema usa sans-serif.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -78,7 +83,7 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 63 passed (2026-10-30)
+- Resultado: 67 passed (2026-10-30)
 - Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales
 
 ## Próximo paso
