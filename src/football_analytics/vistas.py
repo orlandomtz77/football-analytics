@@ -83,12 +83,16 @@ def calendario_equipo(partidos: pd.DataFrame, equipo: str) -> pd.DataFrame:
     }).reset_index(drop=True)
 
 
-def historial_equipo(partidos: pd.DataFrame, equipo: str) -> pd.DataFrame:
-    """Una fila por torneo en que jugó `equipo`: posición, puntos, récord y si jugó la fase final.
+def historial_equipo(
+    partidos: pd.DataFrame, equipo: str, campeones: pd.DataFrame | None = None
+) -> pd.DataFrame:
+    """Una fila por torneo en que jugó `equipo`: posición, puntos, récord y hasta dónde llegó.
 
     `partidos` debe ser el dataset procesado completo (todas las fases y torneos).
-    `Fase final` sale de los partidos de fase final presentes en los datos, no de la posición.
+    `Fase final` sale de los partidos de fase final presentes en los datos, no de la posición;
+    con `campeones` (salida de `campeones.cargar_campeones`) dice además "🏆 Campeón" o "Subcampeón".
     `% puntos` = PTS / (JJ * 3); sirve para comparar torneos con distinto número de partidos.
+    Si se pasan `campeones`, `attrs["con_campeones"]` es True (lo usa `insights.datos_historial`).
     """
     filas = []
     for torneo in ordenar_torneos(partidos["torneo"]):
@@ -99,6 +103,12 @@ def historial_equipo(partidos: pd.DataFrame, equipo: str) -> pd.DataFrame:
             continue
         final = del_torneo[del_torneo["fase"] == "final"]
         jugo_final = bool(((final["equipo_local"] == equipo) | (final["equipo_visitante"] == equipo)).any())
+        fase_final = "✅ Sí" if jugo_final else "—"
+        if campeones is not None and torneo in campeones.index:
+            if campeones.at[torneo, "campeon"] == equipo:
+                fase_final = "🏆 Campeón"
+            elif campeones.at[torneo, "subcampeon"] == equipo:
+                fase_final = "Subcampeón"
         fila = tabla.loc[equipo]
         filas.append({
             "Torneo": torneo,
@@ -109,11 +119,13 @@ def historial_equipo(partidos: pd.DataFrame, equipo: str) -> pd.DataFrame:
             "Récord": record(fila["PG"], fila["PE"], fila["PP"]),
             "DIF": int(fila["DG"]),
             "% puntos": round(100 * fila["Pts"] / (fila["PJ"] * 3)),
-            "Fase final": "✅ Sí" if jugo_final else "—",
+            "Fase final": fase_final,
             "Completo": bool(del_torneo["regular_completa"].iloc[0]),
         })
-    return pd.DataFrame(filas, columns=["Torneo", "Pos", "Equipos", "PTS", "JJ", "Récord", "DIF",
-                                        "% puntos", "Fase final", "Completo"])
+    historial = pd.DataFrame(filas, columns=["Torneo", "Pos", "Equipos", "PTS", "JJ", "Récord", "DIF",
+                                             "% puntos", "Fase final", "Completo"])
+    historial.attrs["con_campeones"] = campeones is not None
+    return historial
 
 
 # Clásicos de Liga MX con los nombres que usa la fuente.

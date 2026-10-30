@@ -204,6 +204,37 @@ def test_datos_historial_ignora_torneos_incompletos():
     assert "Apertura vs. Clausura" not in frases  # no hay Clausura completo para comparar
 
 
+CAMPEONES_PRUEBA = pd.DataFrame(
+    {"campeon": ["Equipo B"], "subcampeon": ["Equipo A"], "definicion": ["global"]},
+    index=pd.Index(["Apertura 2024"], name="torneo"),
+)
+
+
+def test_historial_marca_campeon_y_subcampeon():
+    from football_analytics.vistas import historial_equipo
+
+    datos = _dataset_dos_torneos()
+    a = historial_equipo(datos, "Equipo A", campeones=CAMPEONES_PRUEBA).set_index("Torneo")
+    b = historial_equipo(datos, "Equipo B", campeones=CAMPEONES_PRUEBA).set_index("Torneo")
+    c = historial_equipo(datos, "Equipo C", campeones=CAMPEONES_PRUEBA).set_index("Torneo")
+    assert a.at["Apertura 2024", "Fase final"] == "Subcampeón"
+    assert b.at["Apertura 2024", "Fase final"] == "🏆 Campeón"
+    assert c.at["Apertura 2024", "Fase final"] == "—"
+    assert a.at["Clausura 2025", "Fase final"] == "—"  # sin campeón en la tabla: se usa lo que hay en los datos
+
+
+def test_datos_historial_cuenta_titulos():
+    from football_analytics.insights import datos_historial
+    from football_analytics.vistas import historial_equipo
+
+    datos = _dataset_dos_torneos()
+    frases_b = "\n".join(datos_historial(historial_equipo(datos, "Equipo B", campeones=CAMPEONES_PRUEBA), "Equipo B"))
+    assert "**Títulos:** 1 (Apertura 2024)." in frases_b
+    assert "**Jugó la fase final:** 1 de 1 torneo terminado." in frases_b
+    frases_a = "\n".join(datos_historial(historial_equipo(datos, "Equipo A", campeones=CAMPEONES_PRUEBA), "Equipo A"))
+    assert "**Títulos:** ninguno desde el Apertura 2024." in frases_a
+
+
 def test_grafico_historial_grises_para_incompletos():
     from football_analytics.charts import COLOR_CONECTOR, COLOR_LOCAL, grafico_historial_puntos
     from football_analytics.vistas import historial_equipo
@@ -310,3 +341,37 @@ def test_titular_estado_invalido():
 
     with pytest.raises(ValueError):
         titular_torneo(PARTIDOS, "Apertura 2025", "otro")
+
+
+def test_titular_con_campeon():
+    from football_analytics.insights import titular_torneo
+
+    campeon = pd.Series({"campeon": "Equipo B", "subcampeon": "Equipo C", "definicion": "penales"})
+    titular, bajada = titular_torneo(PARTIDOS, "Apertura 2025", "terminado", campeon=campeon)
+    assert titular == "Equipo B, campeón del Apertura 2025"
+    assert bajada == "Le ganó la final a Equipo C en penales. Equipo A terminó primero en la fase regular con 6 puntos."
+
+    campeon = pd.Series({"campeon": "Equipo A", "subcampeon": "Equipo B", "definicion": "global"})
+    _, bajada = titular_torneo(PARTIDOS, "Apertura 2025", "terminado", campeon=campeon)
+    assert bajada == "Le ganó la final a Equipo B en el marcador global. También terminó primero en la fase regular, con 6 puntos."
+
+    campeon = pd.Series({"campeon": "Equipo C", "subcampeon": "Equipo A", "definicion": "tiempo extra"})
+    _, bajada = titular_torneo(PARTIDOS, "Apertura 2025", "terminado", campeon=campeon)
+    assert bajada.startswith("Le ganó la final a Equipo A en tiempo extra.")
+
+
+def test_titular_ignora_campeon_si_el_torneo_no_termino():
+    from football_analytics.insights import titular_torneo
+
+    campeon = pd.Series({"campeon": "Equipo B", "subcampeon": "Equipo C", "definicion": "global"})
+    titular, _ = titular_torneo(PARTIDOS, "Apertura 2026", "en_curso", campeon=campeon)
+    assert titular == "Equipo A lidera el Apertura 2026"
+
+
+def test_grafico_historial_pone_trofeo_en_titulos():
+    from football_analytics.charts import grafico_historial_puntos
+    from football_analytics.vistas import historial_equipo
+
+    hist = historial_equipo(_dataset_dos_torneos(), "Equipo B", campeones=CAMPEONES_PRUEBA)
+    fig = grafico_historial_puntos(hist, "Equipo B")
+    assert list(fig.data[0].text) == ["1<br>🏆", "3"]  # Apertura 2024 (campeón) y Clausura 2025

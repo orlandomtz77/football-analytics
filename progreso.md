@@ -27,6 +27,8 @@
 - [x] Cara a cara (2026-10-30): `enfrentamientos`, `resumen_enfrentamientos` y `CLASICOS` en `vistas.py`, `datos_cara_a_cara` en `insights.py`; sección en el dashboard con los 4 clásicos o dos equipos a elegir — implementado, probado (62 pruebas, simetría A/B verificada en los 4 clásicos) y revisado visualmente
 - [x] Tema oscuro (2026-10-30): las gráficas usan `theme="streamlit"` y solo fijan los colores de las series (azul `#2a78d6`, naranja `#d95926`, gris `#8a8984`, validados contra los fondos claro `#ffffff` y oscuro `#0e1117`); las zonas de la tabla usan fondos semitransparentes sin color de texto fijo — implementado, probado (63 pruebas) y revisado visualmente en ambos temas, incluido el cambio de tema desde el menú sin recargar
 - [x] Rediseño visual (2026-10-30): tema propio en `.streamlit/config.toml` (Barlow Condensed para titulares, Barlow para texto; acento azul de las gráficas; modo oscuro verde noche `#0b1310`), titular calculado con datos (`titular_torneo` en `insights.py`: terminado, en curso o cancelado; explica el desempate si hay empate en puntos), pestañas Tabla, Lo destacado, Mi equipo, Cara a cara y Partidos, e indicadores en filas que se acomodan en celular — implementado, probado (67 pruebas) y revisado en escritorio (1280 px) y celular (400 px), modo claro y oscuro
+- [x] Campeones (2026-10-30): `data/reference/campeones_liga_mx.csv` (Wikipedia, 27 torneos) y `campeones.py`; validados contra las finales de los datos (27 de 27) y contra Wikipedia en español (17 torneos). Titular "X, campeón del torneo" con cómo se definió la final; historial con "🏆 Campeón"/"Subcampeón", conteo de títulos y trofeos en la gráfica — implementado, probado y revisado visualmente
+- [x] Resultados administrativos (2026-10-30): `data/reference/resultados_administrativos.csv` y `correcciones.py`; Clausura 2021 Atlas-América corregido a 3-0; la tabla coincide con Wikipedia — implementado y probado
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -71,6 +73,10 @@
 - Motivo: público aficionado; el titular dice en una línea lo que más le importa (quién va primero) sin inventar nada (no dice "campeón": la fuente no permite saberlo).
 - Decisión: fuentes de Google Fonts cargadas por URL desde el tema de Streamlit.
 - Motivo: no hay que subir archivos de fuentes al repo; si Google Fonts no carga, el tema usa sans-serif.
+- Decisión: no deducir campeones a partir de los marcadores de la fuente.
+- Motivo: verificado contra Wikipedia (2026-10-30) que la fuente no registra penales y a veces guarda el marcador a 90 minutos (Apertura 2016 y 2023) y a veces el de tiempo extra (Clausura 2023).
+- Decisión: campeones y resultados administrativos desde Wikipedia, en tablas pequeñas versionadas en `data/reference/`.
+- Motivo: la fuente principal no los registra; son pocos datos factuales, con fuente citada y validados contra los partidos.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -83,8 +89,8 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 67 passed (2026-10-30)
-- Pendientes: verificar cómo registra la fuente partidos de liguilla con tiempo extra/penales
+- Resultado: 83 passed (2026-10-30)
+- Pendientes: convertir fecha/hora de la fuente a hora de México
 
 ## Próximo paso
-- Verificar cómo registra la fuente las series de liguilla definidas en tiempo extra o penales (comparando algunas finales conocidas con Wikipedia), como base para mostrar campeones.
+- Convertir la fecha y hora de la fuente a hora de México (la fuente usa hora del Reino Unido: los partidos de noche aparecen un día después).

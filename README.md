@@ -48,6 +48,7 @@ python -m pytest -q
 ```text
 data/raw/            datos originales (no se versionan)
 data/processed/      datos limpios generados (no se versionan)
+data/reference/      campeones y resultados administrativos (segunda fuente, sí se versionan)
 data/README.md       documentación de fuentes
 dashboard/app.py     interfaz Streamlit (solo presentación)
 src/football_analytics/
@@ -59,6 +60,8 @@ src/football_analytics/
   insights.py        titular del torneo y datos en frases
   formato.py         récords y racha con íconos
   vistas.py          tablas listas para la interfaz
+  campeones.py       campeones por torneo (Wikipedia) validados contra las finales
+  correcciones.py    resultados administrativos aplicados al cargar los datos
 tests/               pruebas con pytest
 progreso.md          bitácora del proyecto
 ```

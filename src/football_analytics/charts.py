@@ -165,6 +165,7 @@ def grafico_historial_puntos(historial: pd.DataFrame, equipo: str) -> go.Figure:
 
     Responde: ¿en qué torneos le fue mejor a mi equipo?
     Los torneos incompletos (en curso o cancelados) van en gris para no compararlos como si estuvieran terminados.
+    Los torneos que ganó llevan un trofeo sobre la barra.
     """
     datos = historial.iloc[::-1]  # cronológico: el más antiguo a la izquierda
     colores = [COLOR_LOCAL if completo else COLOR_CONECTOR for completo in datos["Completo"]]
@@ -172,7 +173,8 @@ def grafico_historial_puntos(historial: pd.DataFrame, equipo: str) -> go.Figure:
         x=datos["Torneo"],
         y=datos["PTS"],
         marker={"color": colores, "cornerradius": 4},
-        text=datos["PTS"],
+        # Trofeo sobre la barra de los torneos que ganó (si el historial trae campeones).
+        text=datos["PTS"].astype(str) + datos["Fase final"].map(lambda f: "<br>🏆" if f == "🏆 Campeón" else ""),
         textposition="outside",
         textfont={"size": 11},
         customdata=datos[["Pos", "Equipos", "Récord", "Fase final"]].to_numpy(),

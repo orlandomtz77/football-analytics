@@ -23,8 +23,15 @@ sys.path.insert(0, str(RAIZ / "src"))
 for _modulo in [m for m in sys.modules if m == "football_analytics" or m.startswith("football_analytics.")]:
     del sys.modules[_modulo]
 
+from football_analytics.campeones import (  # noqa: E402
+    FUENTE_CAMPEONES,
+    FUENTE_CAMPEONES_URL,
+    cargar_campeones,
+    validar_campeones,
+)
 from football_analytics.charts import grafico_evolucion_puntos, grafico_historial_puntos  # noqa: E402
 from football_analytics.cleaning import ordenar_torneos  # noqa: E402
+from football_analytics.correcciones import aplicar_correcciones, cargar_correcciones  # noqa: E402
 from football_analytics.formato import cantidad  # noqa: E402
 from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
 from football_analytics.insights import (  # noqa: E402
@@ -55,7 +62,13 @@ DESCARGA_AUTOMATICA = os.environ.get("LIGA_MX_DESCARGA", "1") != "0"
 
 @st.cache_data
 def cargar_datos(ruta: str) -> tuple[pd.DataFrame, dict | None]:
-    return cargar_partidos_procesados(ruta)
+    partidos, metadatos = cargar_partidos_procesados(ruta)
+    # Resultados que la liga cambió en la mesa (la fuente guarda el marcador de la cancha).
+    try:
+        partidos, _ = aplicar_correcciones(partidos, cargar_correcciones())
+    except (OSError, ValueError):
+        partidos = partidos.assign(resultado_administrativo=False)
+    return partidos, metadatos
 
 
 def mostrar_indicadores(indicadores: list[tuple[str, object, str | None]]) -> None:
@@ -91,6 +104,16 @@ except FileNotFoundError:
     )
     st.stop()
 
+# Campeones (segunda fuente): solo se usan los torneos cuya final coincide con los partidos.
+try:
+    campeones = cargar_campeones()
+except (OSError, ValueError):
+    campeones = None
+if campeones is not None:
+    campeones = campeones.drop(index=list(validar_campeones(campeones, partidos)))
+    if campeones.empty:
+        campeones = None
+
 # --- Encabezado: torneo, titular e indicadores ---
 torneos = ordenar_torneos(partidos["torneo"])
 col_marca, col_torneo = st.columns([3, 1], vertical_alignment="bottom")
@@ -112,7 +135,8 @@ else:
     estado = "cancelado"  # en los datos solo ocurre en Clausura 2020 (COVID-19)
 
 # El titular es lo primero que se lee, como la portada de un diario deportivo.
-titular, bajada = titular_torneo(regular, torneo, estado)
+campeon = campeones.loc[torneo] if campeones is not None and torneo in campeones.index else None
+titular, bajada = titular_torneo(regular, torneo, estado, campeon=campeon)
 st.title(titular)
 st.markdown(bajada)
 
@@ -139,6 +163,7 @@ if metadatos:
     st.caption(
         f"Fuente: [{metadatos['fuente']}]({metadatos['url']}), datos obtenidos el {metadatos['fecha_obtencion']} "
         f"con partidos del {metadatos['fecha_min']} al {metadatos['fecha_max']}."
+        + (f" Campeones: [{FUENTE_CAMPEONES}]({FUENTE_CAMPEONES_URL})." if campeones is not None else "")
     )
 else:
     st.caption("Fuente: football-data.co.uk, sin metadatos de fecha (vuelve a ejecutar `ingest`).")
@@ -248,7 +273,7 @@ with pestana_equipo:
         st.plotly_chart(fig, theme="streamlit", width="stretch")
 
     st.subheader(f"Historial de {equipo}")
-    historial = historial_equipo(partidos, equipo)
+    historial = historial_equipo(partidos, equipo, campeones=campeones)
     for frase in datos_historial(historial, equipo):
         st.markdown(f"- {frase}")
     st.caption(
@@ -256,7 +281,7 @@ with pestana_equipo:
         "El nombre del equipo es el de la fuente: si un club cambió de nombre o de sede, aparece por separado."
     )
     st.plotly_chart(grafico_historial_puntos(historial, equipo), theme="streamlit", width="stretch")
-    st.caption("Barras grises: torneo en curso o cancelado.")
+    st.caption("Barras grises: torneo en curso o cancelado." + (" 🏆: campeón." if campeones is not None else ""))
 
     with st.expander("Ver tabla del historial"):
         tabla_historial = historial.assign(
@@ -311,7 +336,19 @@ with pestana_partidos:
         "Visitante": del_torneo["equipo_visitante"],
     })
     st.dataframe(vista, hide_index=True, width="stretch")
-    st.caption("Fecha según la fuente (no documenta la zona horaria; parece hora del Reino Unido).")
+    administrativos = del_torneo[del_torneo["resultado_administrativo"]]
+    if not administrativos.empty:
+        lista = "; ".join(
+            f"{f.equipo_local} {f.goles_local}-{f.goles_visitante} {f.equipo_visitante}"
+            for f in administrativos.itertuples()
+        )
+        st.caption(
+            f"Resultado administrativo (la liga cambió el marcador en la mesa; la tabla usa el oficial): {lista}."
+        )
+    st.caption(
+        "Fecha según la fuente: en partidos de noche suele aparecer un día después, porque la fuente usa "
+        "la hora del Reino Unido."
+    )
 
 st.divider()
 st.caption(

@@ -68,10 +68,29 @@ def _criterio_desempate(primero: pd.Series, segundo: pd.Series) -> str:
     return "orden alfabético"
 
 
-def titular_torneo(partidos: pd.DataFrame, torneo: str, estado: str) -> tuple[str, str]:
-    """Titular y bajada sobre el líder de la fase regular, como en la portada de un diario deportivo.
+COMO_SE_DEFINIO = {"global": "en el marcador global", "tiempo extra": "en tiempo extra", "penales": "en penales"}
 
-    `estado`: "terminado", "en_curso" o "cancelado". No dice "campeón": el título se define en la liguilla.
+
+def _titular_campeon(tabla: pd.DataFrame, torneo: str, campeon: pd.Series) -> tuple[str, str]:
+    lider, puntos = tabla.index[0], tabla["Pts"].iloc[0]
+    if campeon["campeon"] == lider:
+        regular = f"También terminó primero en la fase regular, con {cantidad(puntos, 'punto', 'puntos')}."
+    else:
+        regular = f"{lider} terminó primero en la fase regular con {cantidad(puntos, 'punto', 'puntos')}."
+    return (
+        f"{campeon['campeon']}, campeón del {torneo}",
+        f"Le ganó la final a {campeon['subcampeon']} {COMO_SE_DEFINIO[campeon['definicion']]}. {regular}",
+    )
+
+
+def titular_torneo(
+    partidos: pd.DataFrame, torneo: str, estado: str, campeon: pd.Series | None = None
+) -> tuple[str, str]:
+    """Titular y bajada del torneo, como en la portada de un diario deportivo.
+
+    `partidos`: fase regular del torneo. `estado`: "terminado", "en_curso" o "cancelado".
+    `campeon`: fila de `campeones.cargar_campeones` (campeon, subcampeon, definicion); solo se usa si
+    el torneo terminó. Sin ella el titular habla del líder de la fase regular y no dice "campeón".
     """
     titulares = {
         "terminado": "{lider} terminó primero en la fase regular del {torneo}",
@@ -82,6 +101,8 @@ def titular_torneo(partidos: pd.DataFrame, torneo: str, estado: str) -> tuple[st
         raise ValueError(f"Estado desconocido: {estado!r}. Usa uno de {sorted(titulares)}.")
 
     tabla = calcular_tabla_posiciones(partidos).set_index("equipo")
+    if estado == "terminado" and campeon is not None:
+        return _titular_campeon(tabla, torneo, campeon)
     lider = tabla.index[0]
     primero = tabla.iloc[0]
     titular = titulares[estado].format(lider=lider, torneo=torneo)
@@ -115,6 +136,13 @@ def datos_historial(historial: pd.DataFrame, equipo: str) -> list[str]:
         return []
     completos = historial[historial["Completo"]].set_index("Torneo")
     frases = [f"📅 **Torneos en los datos:** {len(historial)} (desde {historial['Torneo'].iloc[-1]})."]
+    if historial.attrs.get("con_campeones"):
+        # Del más antiguo al más reciente, como se cuentan los títulos.
+        titulos = historial.loc[historial["Fase final"] == "🏆 Campeón", "Torneo"].iloc[::-1].tolist()
+        if titulos:
+            frases.append(f"🏆 **Títulos:** {len(titulos)} ({unir_nombres(titulos)}).")
+        else:
+            frases.append(f"🏆 **Títulos:** ninguno desde el {historial['Torneo'].iloc[-1]}.")
     if completos.empty:
         return frases
 
@@ -130,7 +158,7 @@ def datos_historial(historial: pd.DataFrame, equipo: str) -> list[str]:
     frases.append(f"📉 **Peor torneo:** {detalle(peores)}.")
 
     # Solo torneos terminados: en el actual y en Clausura 2020 nadie pudo jugar la fase final.
-    con_fase_final = (completos["Fase final"] == "✅ Sí").sum()
+    con_fase_final = (completos["Fase final"] != "—").sum()  # "✅ Sí", "🏆 Campeón" o "Subcampeón"
     frases.append(f"🏟️ **Jugó la fase final:** {con_fase_final} de {cantidad(len(completos), 'torneo terminado', 'torneos terminados')}.")
 
     tipo = completos.index.str.split().str[0]
