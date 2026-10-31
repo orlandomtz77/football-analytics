@@ -35,6 +35,7 @@
 - [x] Mejora visual con Superdesign (2026-10-30): diseño generado en Superdesign (proyecto "Liga MX para aficionados", modelo gemini-3.1-pro, conservando el estilo) e implementado en Streamlit: podio con campeón y subcampeón en tarjetas y cómo se definió la final, leyenda de zonas arriba de la tabla, equipo y puntos en negritas, columna Final sin recortar, fuente en el pie de página. Sistema de diseño en `.superdesign/design-system.md` — implementado, probado y revisado en escritorio y celular
 - [x] Infografías de partido (2026-10-30): `config.py` y `generar.py` del usuario integrados como `football_analytics.infografias` (config, estilo nuevo con la identidad del dashboard y fuentes Barlow OFL, statsbomb, graficos, CLI). Corregidos: autogoles en el marcador, `--min-ok 0` ignorado, numeración de archivos y títulos encimados — implementado, probado (11 pruebas) y verificado con la final del Mundial 2022 y Arabia Saudita 1-2 México en los tres temas
 - [x] Infografías de Liga MX (2026-10-30): `infografias/liga_mx.py` con tres láminas (tabla del torneo, ficha de equipo, clásico) a partir de los resultados; `datos.py` concentra la carga que comparten dashboard e infografías (correcciones, hora de México, campeones, estado del torneo). Búsqueda de eventos de Liga MX documentada en `data/README.md` (no hay fuente abierta) — implementado, probado (11 pruebas) y revisado con Apertura 2025, Apertura 2026 (en juego) y Clausura 2020 (cancelado) en los tres temas
+- [x] Escudos de los equipos (2026-10-31): `escudos.py` y `data/reference/escudos_thesportsdb.csv` (23 de 25 equipos, id verificados); en la tabla, el encabezado de Mi equipo, los rivales de sus resultados y Cara a cara — implementado, probado (4 pruebas) y revisado visualmente
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -87,6 +88,8 @@
 - Motivo: la fuente no trae la jornada; con esta regla 412 de 550 semanas de fase regular tienen 9 partidos, pero los reprogramados y algunas jornadas de jueves a martes no cuadran con la jornada oficial.
 - Decisión: infografías con StatsBomb Open Data como módulo aparte, con dependencias en `requirements-infografias.txt`.
 - Motivo: no hay eventos abiertos de Liga MX; matplotlib/mplsoccer no hacen falta en el despliegue del dashboard.
+- Decisión: mostrar los escudos oficiales cargados desde TheSportsDB (decisión del usuario, 2026-10-31).
+- Motivo: el usuario prefirió los escudos reales a insignias propias, informado de que son marcas de cada club, de que TheSportsDB no otorga permiso para usarlos y de que su clave gratuita es solo para desarrollo (ver data/README.md).
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -99,7 +102,7 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 114 passed (2026-10-30; las 22 de infografías se omiten si no está instalado mplsoccer)
+- Resultado: 118 passed (2026-10-31; las 22 de infografías se omiten si no está instalado mplsoccer)
 - Pendientes: ninguno conocido
 
 ## Próximo paso

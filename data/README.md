@@ -112,6 +112,20 @@ Pasos siguientes posibles: crear una cuenta gratuita de API-Football y revisar e
 estadísticas por partido (tiros, posesión); confirmar los términos de FBref antes de usar cualquier dato suyo.
 Mientras tanto, las infografías de Liga MX usan solo resultados (`football_analytics.infografias.liga_mx`).
 
+### Referencia: `reference/escudos_thesportsdb.csv` (escudos de los equipos)
+
+- **Fuente:** TheSportsDB (https://www.thesportsdb.com), API v1, búsqueda por nombre (`searchteams.php`).
+  Generada con `python -m football_analytics.escudos` el 2026-10-31.
+- **Contenido:** equipo (nombre de football-data.co.uk), id de TheSportsDB, nombre en TheSportsDB y la
+  **dirección** del escudo. Las imágenes no se guardan en el repositorio: la app las carga de TheSportsDB tal cual.
+- **Cobertura:** 23 de 25 equipos. Los id se verificaron a mano (país, liga y estadio). Sin escudo:
+  Monarcas (TheSportsDB lo mezcla con Atlético Morelia, otro club) y Lobos BUAP (no aparece).
+- **Condiciones (https://www.thesportsdb.com/docs_terms_of_use.php):** la clave gratuita ("123") es para
+  proyectos de desarrollo y las apps publicadas requieren el plan de pago; los logos son marcas de cada club y
+  la API no otorga permiso para usarlos (deben mostrarse sin modificar). Wikipedia trata estos escudos como
+  material protegido de uso no libre. **Decisión del usuario (2026-10-31): usarlos con esta información.**
+  La app cita a TheSportsDB y aclara que los escudos son marcas de cada club.
+
 ### Referencia: `reference/campeones_liga_mx.csv`
 
 - **Fuente:** Wikipedia, «List of Mexican football champions»

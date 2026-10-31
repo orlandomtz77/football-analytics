@@ -96,6 +96,7 @@ src/football_analytics/
   campeones.py       campeones por torneo (Wikipedia) validados contra las finales
   correcciones.py    resultados administrativos aplicados al cargar los datos
   datos.py           carga compartida (dashboard e infografías): correcciones, hora de México, campeones
+  escudos.py         escudos de los equipos (direcciones de TheSportsDB; ver data/README.md)
   infografias/       láminas de Liga MX (liga_mx.py) e infografías de partido con StatsBomb
 tests/               pruebas con pytest
 progreso.md          bitácora del proyecto

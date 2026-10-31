@@ -27,6 +27,7 @@ from football_analytics.campeones import FUENTE_CAMPEONES, FUENTE_CAMPEONES_URL 
 from football_analytics.charts import grafico_evolucion_puntos, grafico_historial_puntos  # noqa: E402
 from football_analytics.cleaning import ordenar_torneos  # noqa: E402
 from football_analytics.datos import campeones_validos, cargar_liga_mx, estado_torneo  # noqa: E402
+from football_analytics.escudos import FUENTE_ESCUDOS, FUENTE_ESCUDOS_URL, escudo, escudo_html  # noqa: E402
 from football_analytics.formato import cantidad  # noqa: E402
 from football_analytics.ingest import asegurar_datos  # noqa: E402
 from football_analytics.insights import (  # noqa: E402
@@ -169,8 +170,21 @@ def resaltar_zona(fila: pd.Series) -> list[str]:
     return [estilo] * len(fila)
 
 
+# Columna de imagen con el escudo del equipo (TheSportsDB; vacía si no hay escudo verificado).
+COLUMNA_ESCUDO = " "
+
+
+def con_escudos(vista: pd.DataFrame, columna_equipo: str) -> pd.DataFrame:
+    """Agrega el escudo de cada equipo justo antes de `columna_equipo`."""
+    vista = vista.copy()
+    vista.insert(vista.columns.get_loc(columna_equipo), COLUMNA_ESCUDO,
+                 vista[columna_equipo].map(lambda e: escudo(e) or ""))
+    return vista
+
+
 def mostrar_tabla(vista: pd.DataFrame) -> None:
     alto = 35 * (len(vista) + 1) + 3  # todas las filas sin barra de desplazamiento
+    vista = con_escudos(vista, "Equipo")
     estilo = vista.style.apply(resaltar_zona, axis=1).map(lambda _: "font-weight: 600", subset=["Equipo", "PTS"])
     st.dataframe(
         estilo,
@@ -179,6 +193,7 @@ def mostrar_tabla(vista: pd.DataFrame) -> None:
         height=alto,
         # Pos y Equipo fijas al deslizar la tabla en pantallas chicas; Zona y Final sin recortar.
         column_config={"Pos": st.column_config.NumberColumn(pinned=True),
+                       COLUMNA_ESCUDO: st.column_config.ImageColumn(width="small", pinned=True),
                        "Equipo": st.column_config.TextColumn(pinned=True),
                        "Zona": st.column_config.TextColumn(width="medium"),
                        "Final": st.column_config.TextColumn(width="medium")},
@@ -232,6 +247,7 @@ with pestana_destacado:
 with pestana_equipo:
     equipo = st.selectbox("Equipo", general["Equipo"].tolist(), index=0)
     ficha = ficha_equipo(regular, equipo)
+    st.markdown(f"### {escudo_html(equipo, 40)}{equipo}", unsafe_allow_html=True)
 
     diferencia = ficha["puntos_del_lider"] - ficha["puntos"]
     if ficha["posicion"] == 1:
@@ -254,8 +270,9 @@ with pestana_equipo:
     )
 
     st.subheader(f"Resultados de {equipo}")
-    calendario = calendario_equipo(regular, equipo)
-    st.dataframe(calendario, hide_index=True, width="stretch", height=35 * (len(calendario) + 1) + 3)
+    calendario = con_escudos(calendario_equipo(regular, equipo), "Rival")
+    st.dataframe(calendario, hide_index=True, width="stretch", height=35 * (len(calendario) + 1) + 3,
+                 column_config={COLUMNA_ESCUDO: st.column_config.ImageColumn(width="small")})
 
     with st.expander("Ver gráfica de puntos acumulados"):
         lider = ficha["lider"]
@@ -307,6 +324,8 @@ with pestana_cara:
     if resumen["partidos"] == 0:
         st.info(f"{equipo_a} y {equipo_b} no se enfrentaron en Liga MX entre los datos disponibles (desde 2012).")
     else:
+        st.markdown(f"### {escudo_html(equipo_a, 40)}{equipo_a} &nbsp;vs.&nbsp; {escudo_html(equipo_b, 40)}{equipo_b}",
+                    unsafe_allow_html=True)
         mostrar_indicadores([
             (f"Ganó {equipo_a}", resumen["victorias"], None),
             ("Empates", resumen["empates"], None),
@@ -356,6 +375,7 @@ if metadatos:
         f"Fuente: [{metadatos['fuente']}]({metadatos['url']}), datos obtenidos el {metadatos['fecha_obtencion']} "
         f"con partidos del {partidos['fecha'].min():%d/%m/%Y} al {partidos['fecha'].max():%d/%m/%Y}."
         + (f" Campeones: [{FUENTE_CAMPEONES}]({FUENTE_CAMPEONES_URL})." if campeones is not None else "")
+        + f" Escudos: [{FUENTE_ESCUDOS}]({FUENTE_ESCUDOS_URL}); son marcas de cada club."
     )
 else:
     st.caption("Fuente: football-data.co.uk, sin metadatos de fecha (vuelve a ejecutar `ingest`).")
