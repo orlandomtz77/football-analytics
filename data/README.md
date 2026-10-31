@@ -96,6 +96,22 @@ Ninguna de las dos carpetas se sube a Git. Cada dataset se documenta aquí.
   uso (LICENSE.pdf del repositorio) no se pudo leer en línea: revisarlo antes de publicar las imágenes.
 - **Limitaciones:** el periodo 5 (tanda de penales) se descarta; los nombres de equipo vienen en inglés.
 
+### Datos de eventos de Liga MX (tiros, pases, xG): búsqueda del 2026-10-30
+
+No se encontró ninguna fuente **abierta** con eventos de Liga MX (coordenadas de tiros y pases). Resumen:
+
+| Opción | Qué tiene | Estado |
+|---|---|---|
+| StatsBomb Open Data | Eventos completos con xG | No incluye Liga MX (verificado en `competitions.json`) |
+| FBref (con datos de Opta) | Páginas de Liga MX con xG por jugador y por partido | Solo páginas web, sin descarga; sus términos de uso no se pudieron leer (403). No se extrae |
+| API-Football | API con plan gratuito (según terceros: 100 peticiones/día) | Cobertura de Liga MX y tipo de datos sin confirmar: la página oficial respondió 403 |
+| Opta / Stats Perform, StatsBomb, Wyscout (pago) | Eventos con coordenadas | Requieren contrato comercial |
+| Sofascore, FotMob | Mapas de tiros en sus apps | Sin API oficial; no se extraen datos contra sus condiciones |
+
+Pasos siguientes posibles: crear una cuenta gratuita de API-Football y revisar en su panel si Liga MX trae
+estadísticas por partido (tiros, posesión); confirmar los términos de FBref antes de usar cualquier dato suyo.
+Mientras tanto, las infografías de Liga MX usan solo resultados (`football_analytics.infografias.liga_mx`).
+
 ### Referencia: `reference/campeones_liga_mx.csv`
 
 - **Fuente:** Wikipedia, «List of Mexican football champions»

@@ -44,11 +44,22 @@ _BASE = {
 
 TEMAS = {
     # Verde noche, como el modo oscuro del dashboard.
-    "oscuro": {**_BASE, "fondo": "#0b1310", "cesped": "#0b1310", "franja": None, "lineas": "#3a5446"},
+    "oscuro": {**_BASE, "fondo": "#0b1310", "cesped": "#0b1310", "franja": None, "lineas": "#3a5446",
+               "panel": "#15201b"},
     # Cancha con franjas de corte de pasto.
-    "rayados": {**_BASE, "fondo": "#0b1310", "cesped": "#14301f", "franja": "#183823", "lineas": "#8fa89a"},
+    "rayados": {**_BASE, "fondo": "#0b1310", "cesped": "#14301f", "franja": "#183823", "lineas": "#8fa89a",
+                "panel": "#14301f"},
     # Pasto verde clásico, más oscuro de lo habitual para que el azul y el naranja se distingan.
-    "cesped": {**_BASE, "fondo": "#123a21", "cesped": "#184528", "franja": None, "lineas": "#d9e6dd"},
+    "cesped": {**_BASE, "fondo": "#123a21", "cesped": "#184528", "franja": None, "lineas": "#d9e6dd",
+               "panel": "#184528"},
+}
+
+# Resultados (colores de estado validados, >= 3:1 sobre los fondos). Siempre van con su letra G/E/P.
+COLOR_RESULTADO = {"G": "#0ca30c", "E": "#8a8984", "P": "#d03b3b"}
+# Zonas de clasificación: los mismos tonos semitransparentes de la tabla del dashboard.
+COLOR_ZONA = {
+    "Liguilla": (34 / 255, 160 / 255, 80 / 255, 0.22), "Cuartos de final": (34 / 255, 160 / 255, 80 / 255, 0.22),
+    "Reclasificación": (237 / 255, 161 / 255, 0, 0.25), "Play-in": (237 / 255, 161 / 255, 0, 0.25),
 }
 
 
@@ -124,3 +135,59 @@ def etiqueta_flecha(ax, a, b, texto: str, color: str, T: dict) -> None:
     x, y = ax.transData.inverted().transform(medio)
     ax.text(x, y, texto, ha="center", va="center", fontsize=8, fontweight="semibold", color=T["texto"],
             zorder=5, bbox={"boxstyle": "round,pad=0.2", "facecolor": T["cesped"], "edgecolor": color, "lw": 0.8})
+
+
+# ---------------------------------------------------------------- LÁMINAS (sin cancha)
+# Formato vertical 4:5 (1080 x 1350 px a 150 dpi), el que mejor se ve en redes y celular.
+ANCHO_LAMINA, ALTO_LAMINA = 7.2, 9.0
+
+
+def nueva_lamina(T: dict):
+    """Figura vertical con un eje invisible que cubre todo: se dibuja en coordenadas 0-1 (x a la derecha, y arriba)."""
+    plt.rcParams["font.family"] = FUENTE_TEXTO
+    fig = plt.figure(figsize=(ANCHO_LAMINA, ALTO_LAMINA))
+    fig.set_facecolor(T["fondo"])
+    ax = fig.add_axes((0, 0, 1, 1))
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.axis("off")
+    return fig, ax
+
+
+def encabezado(ax, titulo_texto: str, subtitulo: str, T: dict, y: float = 0.955) -> None:
+    """Título grande (Barlow Condensed) y bajada en una o dos líneas, alineados a la izquierda."""
+    titulo_dibujado = ax.text(0.06, y, titulo_texto, ha="left", va="top", color=T["texto"],
+                              fontfamily=FUENTE_TITULO, fontweight="bold", fontsize=27)
+    # Si el título no cabe en el ancho útil (88 %), se reduce su tamaño en proporción (mínimo 16 pt).
+    fig = ax.figure
+    ancho = titulo_dibujado.get_window_extent(renderer=fig.canvas.get_renderer()).width
+    disponible = 0.88 * fig.get_figwidth() * fig.dpi
+    if ancho > disponible:
+        titulo_dibujado.set_fontsize(max(16, 27 * disponible / ancho))
+    if subtitulo:
+        ax.text(0.06, y - 0.058, subtitulo, ha="left", va="top", color=T["texto_secundario"], fontsize=11.5,
+                linespacing=1.35)
+
+
+def pie_lamina(ax, texto: str, T: dict) -> None:
+    ax.text(0.06, 0.022, texto, ha="left", va="bottom", color=T["texto_secundario"], fontsize=8.5, linespacing=1.4)
+
+
+def cuadro_resultado(ax, x: float, y: float, resultado: str, lado: float, T: dict, texto: str | None = None,
+                     alto: float | None = None) -> None:
+    """Cuadro de color con la letra del resultado (G/E/P) o un texto corto (p. ej. el marcador).
+
+    Sin `alto` es un cuadrado en pantalla (aunque la figura no sea cuadrada); con `alto` es un rectángulo.
+    """
+    from matplotlib.patches import FancyBboxPatch
+
+    alto = alto if alto is not None else lado * ANCHO_LAMINA / ALTO_LAMINA
+    ax.add_patch(FancyBboxPatch((x, y - alto / 2), lado, alto, boxstyle="round,pad=0,rounding_size=0.004",
+                                facecolor=COLOR_RESULTADO[resultado], edgecolor="none"))
+    ax.text(x + lado / 2, y, texto or resultado, ha="center", va="center", color=T["fondo"],
+            fontsize=13 if texto else 9, fontweight="bold")
+
+
+def guardar_lamina(fig, ruta) -> None:
+    fig.savefig(ruta, dpi=150, facecolor=fig.get_facecolor())
+    plt.close(fig)

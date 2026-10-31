@@ -34,6 +34,7 @@
 - [x] Campeón y subcampeón visibles (2026-10-30): indicadores "🏆 Campeón" y "Subcampeón" en el encabezado de los torneos terminados y columna `Final` en la tabla general (`tabla_aficionado(..., campeones=...)`) — implementado, probado y revisado en celular
 - [x] Mejora visual con Superdesign (2026-10-30): diseño generado en Superdesign (proyecto "Liga MX para aficionados", modelo gemini-3.1-pro, conservando el estilo) e implementado en Streamlit: podio con campeón y subcampeón en tarjetas y cómo se definió la final, leyenda de zonas arriba de la tabla, equipo y puntos en negritas, columna Final sin recortar, fuente en el pie de página. Sistema de diseño en `.superdesign/design-system.md` — implementado, probado y revisado en escritorio y celular
 - [x] Infografías de partido (2026-10-30): `config.py` y `generar.py` del usuario integrados como `football_analytics.infografias` (config, estilo nuevo con la identidad del dashboard y fuentes Barlow OFL, statsbomb, graficos, CLI). Corregidos: autogoles en el marcador, `--min-ok 0` ignorado, numeración de archivos y títulos encimados — implementado, probado (11 pruebas) y verificado con la final del Mundial 2022 y Arabia Saudita 1-2 México en los tres temas
+- [x] Infografías de Liga MX (2026-10-30): `infografias/liga_mx.py` con tres láminas (tabla del torneo, ficha de equipo, clásico) a partir de los resultados; `datos.py` concentra la carga que comparten dashboard e infografías (correcciones, hora de México, campeones, estado del torneo). Búsqueda de eventos de Liga MX documentada en `data/README.md` (no hay fuente abierta) — implementado, probado (11 pruebas) y revisado con Apertura 2025, Apertura 2026 (en juego) y Clausura 2020 (cancelado) en los tres temas
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -98,7 +99,7 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 103 passed (2026-10-30; las 11 de infografías se omiten si no está instalado mplsoccer)
+- Resultado: 114 passed (2026-10-30; las 22 de infografías se omiten si no está instalado mplsoccer)
 - Pendientes: ninguno conocido
 
 ## Próximo paso

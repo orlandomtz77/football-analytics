@@ -23,17 +23,12 @@ sys.path.insert(0, str(RAIZ / "src"))
 for _modulo in [m for m in sys.modules if m == "football_analytics" or m.startswith("football_analytics.")]:
     del sys.modules[_modulo]
 
-from football_analytics.campeones import (  # noqa: E402
-    FUENTE_CAMPEONES,
-    FUENTE_CAMPEONES_URL,
-    cargar_campeones,
-    validar_campeones,
-)
+from football_analytics.campeones import FUENTE_CAMPEONES, FUENTE_CAMPEONES_URL  # noqa: E402
 from football_analytics.charts import grafico_evolucion_puntos, grafico_historial_puntos  # noqa: E402
-from football_analytics.cleaning import convertir_a_hora_mexico, ordenar_torneos  # noqa: E402
-from football_analytics.correcciones import aplicar_correcciones, cargar_correcciones  # noqa: E402
+from football_analytics.cleaning import ordenar_torneos  # noqa: E402
+from football_analytics.datos import campeones_validos, cargar_liga_mx, estado_torneo  # noqa: E402
 from football_analytics.formato import cantidad  # noqa: E402
-from football_analytics.ingest import asegurar_datos, cargar_partidos_procesados  # noqa: E402
+from football_analytics.ingest import asegurar_datos  # noqa: E402
 from football_analytics.insights import (  # noqa: E402
     COMO_SE_DEFINIO,
     datos_cara_a_cara,
@@ -65,14 +60,8 @@ DESCARGA_AUTOMATICA = os.environ.get("LIGA_MX_DESCARGA", "1") != "0"
 
 @st.cache_data
 def cargar_datos(ruta: str) -> tuple[pd.DataFrame, dict | None]:
-    partidos, metadatos = cargar_partidos_procesados(ruta)
-    # Resultados que la liga cambió en la mesa (la fuente guarda el marcador de la cancha).
-    try:
-        partidos, _ = aplicar_correcciones(partidos, cargar_correcciones())
-    except (OSError, ValueError):
-        partidos = partidos.assign(resultado_administrativo=False)
-    # La fuente usa la hora del Reino Unido; se muestra la del centro de México.
-    return convertir_a_hora_mexico(partidos), metadatos
+    # Resultados oficiales (correcciones administrativas) y hora del centro de México.
+    return cargar_liga_mx(ruta)
 
 
 def mostrar_indicadores(indicadores: list[tuple[str, object, str | None]]) -> None:
@@ -109,14 +98,7 @@ except FileNotFoundError:
     st.stop()
 
 # Campeones (segunda fuente): solo se usan los torneos cuya final coincide con los partidos.
-try:
-    campeones = cargar_campeones()
-except (OSError, ValueError):
-    campeones = None
-if campeones is not None:
-    campeones = campeones.drop(index=list(validar_campeones(campeones, partidos)))
-    if campeones.empty:
-        campeones = None
+campeones = campeones_validos(partidos)
 
 # --- Encabezado: torneo, titular e indicadores ---
 torneos = ordenar_torneos(partidos["torneo"])
@@ -131,12 +113,7 @@ if regular.empty:
     st.info(f"No hay partidos de fase regular registrados para {torneo}.")
     st.stop()
 
-if del_torneo["regular_completa"].iloc[0]:
-    estado = "terminado"
-elif torneo == torneos[0]:
-    estado = "en_curso"
-else:
-    estado = "cancelado"  # en los datos solo ocurre en Clausura 2020 (COVID-19)
+estado = estado_torneo(partidos, torneo)  # terminado, en curso o cancelado (Clausura 2020)
 
 # El titular es lo primero que se lee, como la portada de un diario deportivo.
 campeon = campeones.loc[torneo] if campeones is not None and torneo in campeones.index else None
