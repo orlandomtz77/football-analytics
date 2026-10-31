@@ -157,10 +157,15 @@ pct_local = (regular["resultado"] == "H").mean() * 100
 pct_empate = (regular["resultado"] == "D").mean() * 100
 
 if estado == "terminado" and campeon is not None:
-    mostrar_indicadores([
-        ("🏆 Campeón", campeon["campeon"], f"Ganó la final {COMO_SE_DEFINIO[campeon['definicion']]}."),
-        ("Subcampeón", campeon["subcampeon"], None),
-    ])
+    # Podio: dos tarjetas, más protagonistas que las estadísticas del torneo.
+    como = COMO_SE_DEFINIO[campeon["definicion"]]
+    tarjeta_campeon, tarjeta_subcampeon = st.columns(2)
+    with tarjeta_campeon.container(border=True):
+        st.metric("🏆 Campeón", campeon["campeon"])
+        st.caption(f"Ganó la final {como}.")
+    with tarjeta_subcampeon.container(border=True):
+        st.metric("Subcampeón", campeon["subcampeon"])
+        st.caption(f"Perdió la final {como}.")
 
 mostrar_indicadores([
     ("Partidos jugados", len(regular), "Fase regular."),
@@ -168,15 +173,6 @@ mostrar_indicadores([
     ("Ganó el local", f"{pct_local:.0f} %", "Porcentaje de partidos que ganó el equipo de casa."),
     ("Empates", f"{pct_empate:.0f} %", None),
 ])
-
-if metadatos:
-    st.caption(
-        f"Fuente: [{metadatos['fuente']}]({metadatos['url']}), datos obtenidos el {metadatos['fecha_obtencion']} "
-        f"con partidos del {partidos['fecha'].min():%d/%m/%Y} al {partidos['fecha'].max():%d/%m/%Y}."
-        + (f" Campeones: [{FUENTE_CAMPEONES}]({FUENTE_CAMPEONES_URL})." if campeones is not None else "")
-    )
-else:
-    st.caption("Fuente: football-data.co.uk, sin metadatos de fecha (vuelve a ejecutar `ingest`).")
 
 pestana_tabla, pestana_destacado, pestana_equipo, pestana_cara, pestana_partidos = st.tabs(
     ["Tabla", "Lo destacado", "Mi equipo", "Cara a cara", "Partidos"]
@@ -198,28 +194,43 @@ def resaltar_zona(fila: pd.Series) -> list[str]:
 
 def mostrar_tabla(vista: pd.DataFrame) -> None:
     alto = 35 * (len(vista) + 1) + 3  # todas las filas sin barra de desplazamiento
+    estilo = vista.style.apply(resaltar_zona, axis=1).map(lambda _: "font-weight: 600", subset=["Equipo", "PTS"])
     st.dataframe(
-        vista.style.apply(resaltar_zona, axis=1),
+        estilo,
         hide_index=True,
         width="stretch",
         height=alto,
-        # Pos y Equipo fijas al deslizar la tabla en pantallas chicas.
+        # Pos y Equipo fijas al deslizar la tabla en pantallas chicas; Zona y Final sin recortar.
         column_config={"Pos": st.column_config.NumberColumn(pinned=True),
-                       "Equipo": st.column_config.TextColumn(pinned=True)},
+                       "Equipo": st.column_config.TextColumn(pinned=True),
+                       "Zona": st.column_config.TextColumn(width="medium"),
+                       "Final": st.column_config.TextColumn(width="medium")},
     )
+
+
+def leyenda_zonas(zonas) -> None:
+    """Fichas de color con las zonas de clasificación, arriba de la tabla."""
+    fichas = [
+        f'<span style="display:inline-block;width:0.8em;height:0.8em;border-radius:2px;'
+        f'background:{FONDO_ZONA[nombre]};border:1px solid rgba(128,128,128,0.4);'
+        f'vertical-align:-0.1em;margin-right:0.35em"></span>{nombre} ({desde}.º al {hasta}.º)'
+        for nombre, desde, hasta in zonas
+    ]
+    st.caption("&emsp;".join(fichas), unsafe_allow_html=True)
 
 
 with pestana_tabla:
     pestana_general, pestana_local, pestana_visita = st.tabs(["General", "🏠 Local", "✈️ Visitante"])
     with pestana_general:
         general = tabla_aficionado(regular, torneo, campeones=campeones)
-        mostrar_tabla(general)
         zonas = zonas_del_torneo(torneo)
         if zonas:
-            texto_zonas = "; ".join(f"{nombre} del {desde}.º al {hasta}.º" for nombre, desde, hasta in zonas)
+            leyenda_zonas(zonas)
+        mostrar_tabla(general)
+        if zonas:
             st.caption(
-                f"**Clasificación en el {torneo}:** {texto_zonas}. Zonas según la posición en la tabla; "
-                "no considera excepciones del reglamento (por ejemplo, la tabla de cociente)."
+                "Zonas según la posición en la tabla; no considera excepciones del reglamento "
+                "(por ejemplo, la tabla de cociente)."
             )
         else:
             st.caption(f"El {torneo} no tuvo fase final (se canceló por COVID-19).")
@@ -363,7 +374,15 @@ with pestana_partidos:
     )
 
 st.divider()
+if metadatos:
+    st.caption(
+        f"Fuente: [{metadatos['fuente']}]({metadatos['url']}), datos obtenidos el {metadatos['fecha_obtencion']} "
+        f"con partidos del {partidos['fecha'].min():%d/%m/%Y} al {partidos['fecha'].max():%d/%m/%Y}."
+        + (f" Campeones: [{FUENTE_CAMPEONES}]({FUENTE_CAMPEONES_URL})." if campeones is not None else "")
+    )
+else:
+    st.caption("Fuente: football-data.co.uk, sin metadatos de fecha (vuelve a ejecutar `ingest`).")
 st.caption(
-    "Datos: football-data.co.uk (\"My data is free\"; sin licencia formal de redistribución). "
+    "Datos de football-data.co.uk (\"My data is free\"; sin licencia formal de redistribución). "
     "Solo resultados: no incluye goleadores, alineaciones ni estadísticas de jugadores."
 )

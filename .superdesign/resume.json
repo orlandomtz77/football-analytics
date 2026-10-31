@@ -1,0 +1,14 @@
+{
+  "projectId": "835bb4d1-11a4-4ed0-adbd-f1da4bcb4222",
+  "targets": {
+    "portada-torneo": {
+      "description": "Página principal del dashboard (Streamlit, sin código de UI en HTML): titular, podio, indicadores, pestañas y tabla",
+      "baselineDraftId": null,
+      "activeDraftId": "c4414ef5-979a-4fbb-809a-f3d981476d15",
+      "model": "gemini-3.1-pro",
+      "contextFiles": [".superdesign/design-system.md"],
+      "referenceIds": ["94c586e0-7bf6-4939-8278-c09bbf3baf59"],
+      "notes": "Sin reproducción pixel-perfect: la app es Streamlit; se usó una captura de la app actual como referencia (2026-10-30)."
+    }
+  }
+}

@@ -24,3 +24,7 @@ data/processed/*
 
 # Capturas de pruebas visuales
 .playwright-mcp/
+
+# Superdesign: temporales y extracciones
+.superdesign/tmp/
+.superdesign/website/
