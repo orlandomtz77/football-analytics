@@ -1,0 +1,5 @@
+# Dependencias opcionales para las infografías de partido (StatsBomb):
+# pip install -r requirements.txt -r requirements-infografias.txt
+# Aparte de requirements.txt para no instalarlas en el despliegue del dashboard.
+matplotlib>=3.11
+mplsoccer>=1.8

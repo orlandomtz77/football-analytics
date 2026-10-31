@@ -28,3 +28,6 @@ data/processed/*
 # Superdesign: temporales y extracciones
 .superdesign/tmp/
 .superdesign/website/
+
+# Infografías generadas (PNG)
+salida/

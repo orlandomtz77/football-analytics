@@ -33,6 +33,7 @@
 - [x] Partidos por semana de juego (2026-10-30): `semanas_de_juego`, `etiqueta_fechas` y `tabla_partidos` en `vistas.py`; la pestaña Partidos muestra la semana elegida (por defecto la más reciente) con día y hora, y todos los partidos en un desplegable — implementado, probado y revisado en celular (400 px)
 - [x] Campeón y subcampeón visibles (2026-10-30): indicadores "🏆 Campeón" y "Subcampeón" en el encabezado de los torneos terminados y columna `Final` en la tabla general (`tabla_aficionado(..., campeones=...)`) — implementado, probado y revisado en celular
 - [x] Mejora visual con Superdesign (2026-10-30): diseño generado en Superdesign (proyecto "Liga MX para aficionados", modelo gemini-3.1-pro, conservando el estilo) e implementado en Streamlit: podio con campeón y subcampeón en tarjetas y cómo se definió la final, leyenda de zonas arriba de la tabla, equipo y puntos en negritas, columna Final sin recortar, fuente en el pie de página. Sistema de diseño en `.superdesign/design-system.md` — implementado, probado y revisado en escritorio y celular
+- [x] Infografías de partido (2026-10-30): `config.py` y `generar.py` del usuario integrados como `football_analytics.infografias` (config, estilo nuevo con la identidad del dashboard y fuentes Barlow OFL, statsbomb, graficos, CLI). Corregidos: autogoles en el marcador, `--min-ok 0` ignorado, numeración de archivos y títulos encimados — implementado, probado (11 pruebas) y verificado con la final del Mundial 2022 y Arabia Saudita 1-2 México en los tres temas
 - [x] Metadatos de la fuente en `data/processed/liga_mx_partidos.meta.json` (generados por `ingest`)
 - [x] `tests/test_metrics.py`: victoria, empate, derrota, equipo sin partidos, orden, coherencia, reglamento configurable, tabla vacía y validaciones
 
@@ -83,6 +84,8 @@
 - Motivo: la fuente principal no los registra; son pocos datos factuales, con fuente citada y validados contra los partidos.
 - Decisión: agrupar partidos por "semana de juego" (días seguidos; el viernes empieza otra semana si hubo partidos martes o miércoles), sin llamarles jornadas.
 - Motivo: la fuente no trae la jornada; con esta regla 412 de 550 semanas de fase regular tienen 9 partidos, pero los reprogramados y algunas jornadas de jueves a martes no cuadran con la jornada oficial.
+- Decisión: infografías con StatsBomb Open Data como módulo aparte, con dependencias en `requirements-infografias.txt`.
+- Motivo: no hay eventos abiertos de Liga MX; matplotlib/mplsoccer no hacen falta en el despliegue del dashboard.
 - Decisión: dependencias mínimas (pandas, pytest, plotly, streamlit).
 - Motivo: evitar dependencias sin uso.
 
@@ -95,7 +98,7 @@
 
 ## Pruebas
 - Comando: `.venv\Scripts\python -m pytest -q` (Python 3.12.3, pandas 3.1.0, pytest 9.2.0)
-- Resultado: 92 passed (2026-10-30)
+- Resultado: 103 passed (2026-10-30; las 11 de infografías se omiten si no está instalado mplsoccer)
 - Pendientes: ninguno conocido
 
 ## Próximo paso

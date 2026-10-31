@@ -76,6 +76,26 @@ Ninguna de las dos carpetas se sube a Git. Cada dataset se documenta aquí.
 - **Licencia / condiciones:** el sitio dice "My data is free"; no hay licencia formal de
   redistribución, por eso el archivo no se sube a Git.
 
+### StatsBomb Open Data — eventos de partido (`raw/statsbomb/`)
+
+- **Fuente y URL:** StatsBomb Open Data, https://github.com/statsbomb/open-data
+  (archivos: `data/events/<id>.json`, `data/lineups/<id>.json`, `data/matches/<comp>/<temporada>.json`).
+- **Uso en el proyecto:** solo las infografías de partido (`football_analytics.infografias`); el dashboard
+  de Liga MX no las usa.
+- **Cobertura (revisada el 2026-10-30):** 24 competiciones en `competitions.json`; **no incluye Liga MX** ni
+  ninguna competición de México. Sí incluye el Mundial 2022 (competición 43, temporada 106), con los partidos
+  de México: 3857265 (México 0-0 Polonia), 3857289 (Argentina 2-0 México), 3857260 (Arabia Saudita 1-2 México).
+- **Granularidad:** un renglón por evento (pase, tiro, presión, cambio...) con coordenadas en una cancha de
+  120 x 80 y xG de StatsBomb en los tiros.
+- **Descarga:** una sola vez por partido a `raw/statsbomb/` (no se modifica después; ignorado por Git).
+- **Validaciones (2026-10-30):** el marcador calculado coincide con el oficial en la final del Mundial 2022
+  (3-3 sin la tanda de penales) y en Canadá 1-2 Marruecos, que incluye un autogol (`Own Goal For` cuenta para
+  el equipo beneficiado).
+- **Condiciones:** StatsBomb los ofrece "for public use for research projects and genuine interest in football
+  analytics" y pide, al publicar, citar a StatsBomb como fuente **y usar su logo** (Media Pack). El acuerdo de
+  uso (LICENSE.pdf del repositorio) no se pudo leer en línea: revisarlo antes de publicar las imágenes.
+- **Limitaciones:** el periodo 5 (tanda de penales) se descarta; los nombres de equipo vienen en inglés.
+
 ### Referencia: `reference/campeones_liga_mx.csv`
 
 - **Fuente:** Wikipedia, «List of Mexican football champions»

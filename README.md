@@ -37,6 +37,23 @@ streamlit run dashboard/app.py
 Se abre en http://localhost:8501. Para usar otro archivo procesado, define la variable
 de entorno `LIGA_MX_DATOS` con su ruta.
 
+## Infografías de partido (StatsBomb)
+
+Mapa de tiros con xG, redes de pases completados y fallidos, y mapa de pases fallidos de un partido,
+con el estilo del dashboard. Usa eventos de **StatsBomb Open Data**, que no incluye Liga MX (sí el Mundial
+2022, con los partidos de México). Detalles y condiciones de uso en `data/README.md`.
+
+```powershell
+pip install -r requirements-infografias.txt
+$env:PYTHONPATH = "src"
+python -m football_analytics.infografias 3857260                  # Arabia Saudita 1-2 México (Mundial 2022)
+python -m football_analytics.infografias 3869685 --tema rayados   # final del Mundial 2022
+python -m football_analytics.infografias --help                   # temas, mínimos de pases, --lineas
+```
+
+Los PNG se guardan en `salida/` (no se versiona). Los ajustes frecuentes están en
+`src/football_analytics/infografias/config.py`; colores y tipografía en `estilo.py`.
+
 ## Ejecutar pruebas
 
 ```powershell
@@ -62,6 +79,7 @@ src/football_analytics/
   vistas.py          tablas listas para la interfaz
   campeones.py       campeones por torneo (Wikipedia) validados contra las finales
   correcciones.py    resultados administrativos aplicados al cargar los datos
+  infografias/       infografías de partido con StatsBomb (config, estilo, statsbomb, graficos)
 tests/               pruebas con pytest
 progreso.md          bitácora del proyecto
 ```
